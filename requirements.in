@@ -1,0 +1,10 @@
+torch
+torchtext
+transformers
+wandb
+sklearn 
+pandas 
+numpy 
+keras 
+tensorflow 
+spacy 
