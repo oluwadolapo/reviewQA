@@ -12,7 +12,7 @@ import time
 
 from classifier.rnn import config
 from classifier.rnn.train_eval import train, evaluate
-from classifier.rnn.model import lstm
+from classifier.rnn.model import lstm, lstm_attention
 from classifier.rnn.data import train_data
 from utils import format_time
 
@@ -92,6 +92,9 @@ def rnn_model(args, vocab, PAD_IDX):
 
     model = lstm(INPUT_DIM, EMBEDDING_DIM, OUTPUT_DIM, DROPOUT, PAD_IDX, 
                         HIDDEN_DIM, N_LAYERS, BIDIRECTIONAL)
+
+    #model = lstm_attention(INPUT_DIM, EMBEDDING_DIM, OUTPUT_DIM, DROPOUT, PAD_IDX, 
+                        #HIDDEN_DIM, N_LAYERS, BIDIRECTIONAL)
 
     return model
 
