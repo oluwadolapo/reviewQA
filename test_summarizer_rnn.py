@@ -18,7 +18,7 @@ def get_params():
                         help='Directory for loading testing data')
     parser.add_argument('--load_vocab_path', dest='load_vocab_path', type=str, default=None,
                         help='Directory for loading vocabulary')
-    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=512,
+    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=1000,
                         help='Maximum input length for encoder')
     parser.add_argument('--max_output_length', dest='max_output_length', type=int, default=512,
                         help='Maximum output length for decoder')
@@ -30,6 +30,8 @@ def get_params():
                         help='Number of LSTM encoder layers')
     parser.add_argument('--decoder_n_layers', dest='decoder_n_layers', type=int, default=2,
                         help='Number of LSTM decoder layers')
+    parser.add_argument('--with_attention', dest='with_attention', action='store_true',
+                        default=False, help='Attention mechanism included or not?')
     parser.add_argument('--batch_size', dest='batch_size', type=int, default=1,
                         help='Training batch size')
     args = parser.parse_args()
@@ -164,8 +166,12 @@ def main():
 
     ##### Define the encoder and decoder #####
     encoder = EncoderRNN(vocab_json["voc"]["num_words"], args.hidden_size, args.encoder_n_layers, args.dropout)
-    #decoder = AttnDecoderRNN1(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
-    decoder = DecoderRNN(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
+    
+    if args.with_attention:
+        decoder = AttnDecoderRNN1(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
+    else:
+        decoder = DecoderRNN(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
+    
     encoder.load_state_dict(torch.load(args.load_encoder_path))
     decoder.load_state_dict(torch.load(args.load_decoder_path))
     encoder = encoder.to(device)

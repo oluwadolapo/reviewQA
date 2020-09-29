@@ -69,7 +69,7 @@ def training(args, encoder, decoder, batches, device):
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
     best_loss = float('inf')
-    for epoch in range(5):
+    for epoch in range(args.num_train_epochs):
         train_loss, encoder, decoder = train(args, batches[:data_split], encoder, decoder, encoder_optimizer, decoder_optimizer, device)
         val_loss = validate(args, batches[data_split:], encoder, decoder, device)
 
@@ -102,8 +102,10 @@ def main():
 
     ##### Define the encoder and decoder #####
     encoder = EncoderRNN(voc.num_words, args.hidden_size, args.encoder_n_layers, args.dropout)
-    #decoder = AttnDecoderRNN1(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
-    decoder = DecoderRNN(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
+    if args.with_attention:
+        decoder = AttnDecoderRNN1(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
+    else:
+        decoder = DecoderRNN(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
     encoder = encoder.to(device)
     decoder = decoder.to(device)
     wandb.watch(encoder)

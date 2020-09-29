@@ -26,7 +26,7 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
   decoder_optimizer.zero_grad()
 
   #for i in range(args.data_size//args.batch_size):
-  for i in range(71//args.batch_size):
+  for i in range(len(batches)):
     input_variable, lengths, target_variable, mask, max_target_len = batches[i]
     input_variable.to(device)
     lengths.to(device)
@@ -77,7 +77,7 @@ def validate(args, batches, encoder, decoder, device):
   loss = []
 
   #for i in range(args.data_size//args.batch_size):
-  for i in range(71//args.batch_size):
+  for i in range(len(batches)):
     input_variable, lengths, target_variable, mask, max_target_len = batches[i]
     input_variable.to(device)
     lengths.to(device)
