@@ -2,12 +2,14 @@ import argparse
 
 def get_params():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project_name', dest='project_name', type=str, default=None,
+    parser.add_argument('--project_name', dest='project_name', type=str, default='review-summarizer',
                         help='Name of project')
     parser.add_argument('--random_seed', dest='random_seed', type=int, default=42,
                         help='Random Seed')
     parser.add_argument('--rnn_type', dest='rnn_type', type=str, default='rnn',
                         help='The type of rnn model to be used')
+    parser.add_argument('--with_attention', dest='with_attention', action='store_true',
+                        default=False, help='Attention mechanism included or not?')
     parser.add_argument('--emb_dim', dest='emb_dim', type=int, default=100,
                         help='Embedding size')
     parser.add_argument('--dropout', dest='dropout', type=int, default=0.1,
@@ -27,16 +29,14 @@ def get_params():
     parser.add_argument('--save_vocab_path', dest='save_vocab_path', type=str, default=None,
                         help='Directory for saving vocabulary path')
     parser.add_argument('--data_path', dest='data_path', type=str, default=None,
-                        help='Dataset Path')
-    parser.add_argument('--data_size', dest='data_size', type=int, default=1000,
-                        help='Dataset Path')                   
+                        help='Dataset Path')           
     parser.add_argument('--local_test', dest='local_test', action='store_true',
                         default=False, help='Testing on local computer?')
     parser.add_argument('--from_scratch', dest='from_scratch', action='store_true',
                         default=False, help='Train from scratch or not?')
     parser.add_argument('--num_epoch', dest='num_epoch', type=int, default=1,
                         help='Number of training epochs')
-    parser.add_argument('--max_length', dest='max_length', type=int, default=100,
+    parser.add_argument('--max_length', dest='max_length', type=int, default=1000,
                         help='Maximum input length for encoder')
     parser.add_argument('--teacher_forcing_ratio', dest='teacher_forcing_ratio', type=int, default=0.5,
                         help='Teacher forcing ratio')
@@ -58,7 +58,7 @@ def get_params():
                         help='Max grad norm')
     parser.add_argument('--gradient_accumulation_steps', dest='gradient_accumulation_steps', type=int, default=1,
                         help='gradient accumulation steps')
-    parser.add_argument('--num_train_epochs', dest='num_train_epochs', type=int, default=1,
+    parser.add_argument('--num_train_epochs', dest='num_train_epochs', type=int, default=5,
                         help='Number of training epochs')
     parser.add_argument('--warmup_steps', dest='warmup_steps', type=int, default=0,
                         help='Warmup steps')

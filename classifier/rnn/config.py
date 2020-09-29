@@ -2,7 +2,7 @@ import argparse
 
 def get_params():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project_name', dest='project_name', type=str, default=None,
+    parser.add_argument('--project_name', dest='project_name', type=str, default='question-answerability',
                         help='Name of Project')
     parser.add_argument('--random_seed', dest='random_seed', type=int, default=1234,
                         help='Random Seed')
