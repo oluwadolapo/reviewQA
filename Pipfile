@@ -14,6 +14,8 @@ numpy = "*"
 keras = "*"
 tensorflow = "*"
 spacy = "*"
+ipython = "*"
+rouge = "*"
 
 [requires]
 python_version = "3.8"
