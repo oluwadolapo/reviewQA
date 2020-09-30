@@ -42,7 +42,7 @@ def prepare_data(args):
     """
     steps = len(pairs)//args.batch_size
     for i in range(steps):
-        batch = pre_data.batch2TestData(vocab_json, [pairs[i] for _ in range(args.batch_size)]])
+        batch = pre_data.batch2TrainData(vocab_json, [pairs[i] for _ in range(args.batch_size)])
         batches.append(batch)
 
     # Save vocabulary for testing purpose

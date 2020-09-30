@@ -90,11 +90,12 @@ def rnn_model(args, vocab, PAD_IDX):
     N_LAYERS = args.n_lstm_layers
     BIDIRECTIONAL = True
 
-    model = lstm(INPUT_DIM, EMBEDDING_DIM, OUTPUT_DIM, DROPOUT, PAD_IDX, 
+    if args.with_attention:
+        model = lstm_attention(INPUT_DIM, EMBEDDING_DIM, OUTPUT_DIM, DROPOUT, PAD_IDX, 
                         HIDDEN_DIM, N_LAYERS, BIDIRECTIONAL)
-
-    #model = lstm_attention(INPUT_DIM, EMBEDDING_DIM, OUTPUT_DIM, DROPOUT, PAD_IDX, 
-                        #HIDDEN_DIM, N_LAYERS, BIDIRECTIONAL)
+    else:
+        model = lstm(INPUT_DIM, EMBEDDING_DIM, OUTPUT_DIM, DROPOUT, PAD_IDX, 
+                        HIDDEN_DIM, N_LAYERS, BIDIRECTIONAL)
 
     return model
 
