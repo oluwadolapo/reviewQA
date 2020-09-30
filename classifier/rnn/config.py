@@ -16,6 +16,8 @@ def get_params():
                         help='LSTM hidden dimension')
     parser.add_argument('--n_lstm_layers', dest='n_lstm_layers', type=int, default=2,
                         help='Number of LSTM layers')
+    parser.add_argument('--with_attention', dest='with_attention', action='store_true',
+                        default=False, help='Attention mechanism included or not?')
     parser.add_argument('--batch_size', dest='batch_size', type=int, default=32,
                         help='Batch Size')
     parser.add_argument('--resume_training', dest='resume_training', action='store_true',
