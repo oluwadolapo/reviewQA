@@ -44,6 +44,7 @@ class ReadData:
         print()
         print("Reading and processing file...Please wait")
         df = pd.read_json(args.data_path, orient='split')
+        df = df[:int(0.99*len(df))]
         questions = [q if q.endswith("?") else q+"?" for q in df.question]
         reviews = [r for r in df.passages]
         answers = [a for a in df.answers]

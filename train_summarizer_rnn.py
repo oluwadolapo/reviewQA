@@ -42,21 +42,20 @@ def prepare_data(args):
     """
     steps = len(pairs)//args.batch_size
     for i in range(steps):
-        batch = pre_data.batch2TrainData(vocab_json, [pairs[i] for _ in range(args.batch_size)])
+        batch = pre_data.batch2TrainData(voc, [pairs[i] for _ in range(args.batch_size)])
         batches.append(batch)
 
+    
     # Save vocabulary for testing purpose
-    with open(args.save_vocab_path, 'r') as json_data:
-        vocab_json = json.load(json_data)
-        vocab_json["voc"]["pad_token"] = voc.PAD_token
-        vocab_json["voc"]["unk_token"] = voc.UNK_token
-        vocab_json["voc"]["sos_token"] = voc.SOS_token
-        vocab_json["voc"]["eos_token"] = voc.EOS_token
-        vocab_json["voc"]["num_words"] = voc.num_words
-        vocab_json["voc"]["word2index"] = voc.word2index
-        vocab_json["voc"]["word2count"] = voc.word2count
-        vocab_json["voc"]["index2word"] = voc.index2word
-
+    vocab_json = {"voc":{}}
+    vocab_json["voc"]["pad_token"] = voc.PAD_token
+    vocab_json["voc"]["unk_token"] = voc.UNK_token
+    vocab_json["voc"]["sos_token"] = voc.SOS_token
+    vocab_json["voc"]["eos_token"] = voc.EOS_token
+    vocab_json["voc"]["num_words"] = voc.num_words
+    vocab_json["voc"]["word2index"] = voc.word2index
+    vocab_json["voc"]["word2count"] = voc.word2count
+    vocab_json["voc"]["index2word"] = voc.index2word
     with open(args.save_vocab_path, 'w') as json_data:
         json.dump(vocab_json, json_data)
         
