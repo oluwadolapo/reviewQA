@@ -28,9 +28,9 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
   #for i in range(args.data_size//args.batch_size):
   for i in range(len(batches)):
     input_variable, lengths, target_variable, mask, max_target_len = batches[i]
-    input_variable.to(device)
-    lengths.to(device)
-    target_variable.to(device)
+    input_variable = input_variable.to(device)
+    lengths = lengths.to(device)
+    target_variable = target_variable.to(device)
     mask = mask.to(device)
     # Forward pass through encoder
     encoder_outputs, encoder_hidden = encoder(input_variable, lengths)
@@ -45,7 +45,7 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     # Determine if we are using teacher forcing this iteration
     #use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
     use_teacher_forcing = True
-    step_loss = torch.zeros(1)
+    step_loss = torch.zeros(1).to(device)
     # Forward batch of sequences through decoder one step at a time
     if use_teacher_forcing:
       for t in range(max_target_len):
@@ -96,7 +96,7 @@ def validate(args, batches, encoder, decoder, device):
     # Determine if we are using teacher forcing this iteration
     #use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
     use_teacher_forcing = True
-    step_loss = torch.zeros(1)
+    step_loss = torch.zeros(1).to(device)
     # Forward batch of sequences through decoder one step at a time
     if use_teacher_forcing:
       for t in range(max_target_len):
