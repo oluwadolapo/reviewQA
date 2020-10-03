@@ -16,6 +16,7 @@ tensorflow = "*"
 spacy = "*"
 ipython = "*"
 rouge = "*"
+nltk = "*"
 
 [requires]
 python_version = "3.8"

@@ -1,4 +1,5 @@
 import os
+import nltk
 import unicodedata
 import re
 import itertools
@@ -38,7 +39,30 @@ class ReadData:
 
     # Filter pairs using filterPair condition
     def filterPairs(self, pairs):
-        return [pair for pair in pairs if self.filterPair(pair)]
+        #return [pair for pair in pairs if self.filterPair(pair)]
+        new_pairs = []
+        for pair in pairs:
+            pair[0] = nltk.word_tokenize(pair[0])
+            pair[1] = nltk.word_tokenize(pair[1])
+            pair1 = ''
+            pair2 = ''
+            if len(pair[0]) > self.MAX_LENGTH:
+                for word in pair1[:self.MAX_LENGTH]:
+                    pair1 += ' ' + word
+                pair[0] = pair1
+                for word in pair2[:self.MAX_LENGTH]:
+                    pair2 += ' ' + word
+                pair[1] = pair2
+                new_pairs.append(pair)
+            else:
+                for word in pair1:
+                    pair1 += ' ' + word
+                pair[0] = pair1
+                for word in pair2:
+                    pair2 += ' ' + word
+                pair[1] = pair2
+                new_pairs.append(pair)
+        return new_pairs
 
     def readFile(self, args):
         print()
@@ -183,7 +207,8 @@ class PrepareData:
         padList = self.zeroPadding(indexes_batch)
         padVar = torch.LongTensor(padList)
         mask = self.binaryMatrix(padList)
-        mask = torch.ByteTensor(mask)
+        #mask = torch.ByteTensor(mask)
+        mask = torch.tensor(mask, dtype=torch.bool)
         return padVar, mask, max_target_len
 
     def batch2TrainData(self, voc, pair_batch):
