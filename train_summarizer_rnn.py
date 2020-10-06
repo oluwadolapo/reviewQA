@@ -30,7 +30,6 @@ def prepare_data(args):
         voc.addSentence(pair[1])
     
     pairs = voc.filter_voc(pairs)
-    #import IPython; IPython.embed(); exit(1)
     pre_data = PrepareData()
     batches = []
     """

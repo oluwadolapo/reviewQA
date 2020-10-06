@@ -18,7 +18,7 @@ def get_params():
                         help='Directory for loading testing data')
     parser.add_argument('--load_vocab_path', dest='load_vocab_path', type=str, default=None,
                         help='Directory for loading vocabulary')
-    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=1000,
+    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=512,
                         help='Maximum input length for encoder')
     parser.add_argument('--max_output_length', dest='max_output_length', type=int, default=512,
                         help='Maximum output length for decoder')
@@ -34,6 +34,8 @@ def get_params():
                         default=False, help='Attention mechanism included or not?')
     parser.add_argument('--batch_size', dest='batch_size', type=int, default=1,
                         help='Training batch size')
+    parser.add_argument('--test_mode', dest='test_mode', action='store_true',
+                        default=False, help='Testing mode?')
     args = parser.parse_args()
     return args
 
@@ -46,7 +48,8 @@ class PrepareData:
 
     def indexesFromSentence(self, vocab_json, sentence):
         indexes = []
-        for word in sentence.split(' '):
+        #for word in sentence.split(' '):
+        for word in nltk.word_tokenize(sentence):
             try:
                 indexes.append(vocab_json["voc"]["word2index"][word])
             except KeyError:
@@ -145,8 +148,9 @@ def test(args, vocab_json, batches, encoder, decoder, device):
             ans += word + " "
         pred_answers.append(ans)
         ref_answers.append(ref_output[0])
-        break
+        
     rouge = Rouge()
+    #import IPython; IPython.embed(); exit(1)
     scores = rouge.get_scores(pred_answers, ref_answers, avg=True)
 
     print(scores)
@@ -172,8 +176,8 @@ def main():
     else:
         decoder = DecoderRNN(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
     
-    encoder.load_state_dict(torch.load(args.load_encoder_path))
-    decoder.load_state_dict(torch.load(args.load_decoder_path))
+    encoder.load_state_dict(torch.load(args.load_encoder_path, map_location=torch.device('cpu')))
+    decoder.load_state_dict(torch.load(args.load_decoder_path, map_location=torch.device('cpu')))
     encoder = encoder.to(device)
     decoder = decoder.to(device)
     test(args, vocab_json, batches, encoder, decoder, device)

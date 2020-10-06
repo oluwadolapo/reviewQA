@@ -39,7 +39,8 @@ class ReadData:
 
     # Filter pairs using filterPair condition
     def filterPairs(self, pairs):
-        #return [pair for pair in pairs if self.filterPair(pair)]
+        return [pair for pair in pairs if self.filterPair(pair)]
+        """
         new_pairs = []
         for pair in pairs:
             pair[0] = nltk.word_tokenize(pair[0])
@@ -63,12 +64,17 @@ class ReadData:
                 pair[1] = pair2
                 new_pairs.append(pair)
         return new_pairs
-
+        """
     def readFile(self, args):
         print()
         print("Reading and processing file...Please wait")
         df = pd.read_json(args.data_path, orient='split')
-        df = df[:int(0.99*len(df))]
+    
+        if args.test_mode:
+            df = df[int(0.99*len(df)):]
+        else:
+            df = df[:int(0.99*len(df))]
+        
         questions = [q if q.endswith("?") else q+"?" for q in df.question]
         reviews = [r for r in df.passages]
         answers = [a for a in df.answers]
@@ -107,7 +113,8 @@ class Vocabulary:
         self.num_words = 4 #Count SOS, EOS, PAD, UNK
 
     def addSentence(self, sentence):
-        for word in sentence.split(' '):
+        #for word in sentence.split(' '):
+        for word in nltk.word_tokenize(sentence):
             self.addWord(word)
     def addWord(self, word):
         if word not in self.word2index:
@@ -148,7 +155,8 @@ class Vocabulary:
           keep_input = True
           keep_output = True
           # Check input sentence
-          for word in input_sentence.split(' '):
+          #for word in input_sentence.split(' '):
+          for word in nltk.word_tokenize(input_sentence):
             if word not in self.word2index:
               keep_output = False
               break
@@ -165,7 +173,8 @@ class PrepareData:
 
     def indexesFromSentence(self, voc, sentence):
         indexes = []
-        for word in sentence.split(' '):
+        #for word in sentence.split(' '):
+        for word in nltk.word_tokenize(sentence):
             try:
                 indexes.append(voc.word2index[word])
             except KeyError:

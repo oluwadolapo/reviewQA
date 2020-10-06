@@ -32,11 +32,13 @@ def get_params():
                         help='Dataset Path')           
     parser.add_argument('--local_test', dest='local_test', action='store_true',
                         default=False, help='Testing on local computer?')
+    parser.add_argument('--test_mode', dest='test_mode', action='store_true',
+                        default=False, help='Testing mode?')
     parser.add_argument('--from_scratch', dest='from_scratch', action='store_true',
                         default=False, help='Train from scratch or not?')
     parser.add_argument('--num_epoch', dest='num_epoch', type=int, default=1,
                         help='Number of training epochs')
-    parser.add_argument('--max_length', dest='max_length', type=int, default=512,
+    parser.add_argument('--max_length', dest='max_length', type=int, default=700,
                         help='Maximum input length for encoder')
     parser.add_argument('--teacher_forcing_ratio', dest='teacher_forcing_ratio', type=int, default=0.5,
                         help='Teacher forcing ratio')
