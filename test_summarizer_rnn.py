@@ -19,7 +19,7 @@ def get_params():
                         help='Directory for loading testing data')
     parser.add_argument('--load_vocab_path', dest='load_vocab_path', type=str, default=None,
                         help='Directory for loading vocabulary')
-    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=512,
+    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=1000,
                         help='Maximum input length for encoder')
     parser.add_argument('--max_output_length', dest='max_output_length', type=int, default=512,
                         help='Maximum output length for decoder')

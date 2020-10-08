@@ -38,7 +38,7 @@ def get_params():
                         default=False, help='Train from scratch or not?')
     parser.add_argument('--num_epoch', dest='num_epoch', type=int, default=1,
                         help='Number of training epochs')
-    parser.add_argument('--max_length', dest='max_length', type=int, default=700,
+    parser.add_argument('--max_length', dest='max_length', type=int, default=512,
                         help='Maximum input length for encoder')
     parser.add_argument('--teacher_forcing_ratio', dest='teacher_forcing_ratio', type=int, default=0.5,
                         help='Teacher forcing ratio')
