@@ -3,6 +3,7 @@ import random
 import itertools
 import json
 import torch
+import nltk
 from rouge import Rouge
 
 from summarizer.rnn.data import ReadData
@@ -117,8 +118,8 @@ def test(args, vocab_json, batches, encoder, decoder, device):
     #for i in range(args.data_size//args.batch_size):
     for i in range(len(batches)):
         input_variable, lengths, ref_output = batches[i]
-        input_variable.to(device)
-        lengths.to(device)
+        input_variable = input_variable.to(device)
+        lengths = lengths.to(device)
 
         # Forward pass through encoder
         encoder_outputs, encoder_hidden = encoder(input_variable, lengths)
@@ -132,8 +133,10 @@ def test(args, vocab_json, batches, encoder, decoder, device):
 
         answer = []
         for t in range(args.max_output_length):
-            #decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
-            decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+            if args.with_attention:
+                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
+            else:
+                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             # No teacher forcing: next input is decoder's own current output
             _, topi = decoder_output.topk(1)
             answer.append(vocab_json["voc"]["index2word"][str(topi[0][0].item())])

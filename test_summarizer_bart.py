@@ -34,7 +34,7 @@ def main():
     args = get_params()
     model = SummarizerModel(args.model_path)
     df = pd.read_json(args.data_path, orient='split')
-    #df = df.head(10)
+    df = df[49500:]
     quest_rev, ref_answers = prepare_data(df)
     pred_answers = []
     for i in range(len(quest_rev)):
