@@ -175,7 +175,7 @@ def main():
     encoder = EncoderRNN(vocab_json["voc"]["num_words"], args.hidden_size, args.encoder_n_layers, args.dropout)
     
     if args.with_attention:
-        decoder = AttnDecoderRNN1(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
+        decoder = AttnDecoderRNN1(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
     else:
         decoder = DecoderRNN(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
     
