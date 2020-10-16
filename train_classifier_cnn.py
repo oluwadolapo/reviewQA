@@ -45,6 +45,7 @@ def training(args, model, vocab, UNK_IDX, PAD_IDX, device, *data_iterators):
     optimizer, criterion = optimization(model)
     criterion = criterion.to(device)
     best_valid_loss = float('inf')
+    best_valid_acc = 0.0
     total_t0 = time.time()
     for epoch in range(1, args.n_epochs+1):
         print("")
@@ -62,11 +63,13 @@ def training(args, model, vocab, UNK_IDX, PAD_IDX, device, *data_iterators):
         print("   Validation Loss: {0:.2f}".format(valid_loss))
         print("   Validation took: {:}".format(valid_time))
 
-        if valid_loss < best_valid_loss:
+        #if valid_loss < best_valid_loss:
+        if best_valid_acc < valid_acc:
             print("Saving model to %s" % args.save_model_path)
             wandb.run.summary["best_val_loss"] = valid_loss
             wandb.run.summary["best-loss-epoch"] = epoch
-            best_valid_loss = valid_loss
+            #best_valid_loss = valid_loss
+            best_valid_acc = valid_acc
             torch.save(model.state_dict(), args.save_model_path)
 
             # Save embeddings
