@@ -81,7 +81,7 @@ def evaluate(args, model, test_iterator, device):
 
 if __name__ == "__main__":
     try:
-        from train_classifier_cnn import rnn_model, _set_random_seeds
+        from train_classifier_rnn import rnn_model, _set_random_seeds
         args = config.get_params()
         wandb.init(config=args, project=args.project_name)
         _set_random_seeds(args.random_seed)
@@ -95,7 +95,7 @@ if __name__ == "__main__":
             device = torch.device("cpu")
 
         test_iterator, vocab = test_data(args, device)
-        model = cnn_model(args, vocab, 1)
+        model = rnn_model(args, vocab, 1)
         model.load_state_dict(torch.load(args.load_model_path))
         model = model.to(device)
         wandb.watch(model)
