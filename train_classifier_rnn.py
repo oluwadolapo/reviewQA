@@ -11,10 +11,11 @@ import random
 import time
 
 from classifier.rnn import config
-from classifier.rnn.train_eval import train, evaluate
+from classifier.rnn.train_val import train, validate
 from classifier.rnn.model import lstm, lstm_attention
 from classifier.rnn.data import train_data
 from utils import format_time
+from test_classifier_rnn import test_data, evaluate
 
 def _set_random_seeds(seed):
     random.seed(seed)
@@ -50,7 +51,7 @@ def training(args, model, vocab, UNK_IDX, PAD_IDX, device, *data_iterators):
         print('======== Epoch {:} / {:} ========'.format(epoch, args.n_epochs))
 
         train_loss, train_acc, train_time = train(model, data_iterators[0], optimizer, criterion)
-        valid_loss, valid_acc, valid_time = evaluate(model, data_iterators[1], criterion)
+        valid_loss, valid_acc, valid_time = validate(model, data_iterators[1], criterion)
 
         wandb.log({"avg_train_loss": train_loss, "avg_train_acc": train_acc, "avg_val_loss": valid_loss, "avg_val_acc": valid_acc}, step=epoch)
         
@@ -80,6 +81,9 @@ def training(args, model, vocab, UNK_IDX, PAD_IDX, device, *data_iterators):
                         continue
                     vector = ' '.join([str(i) for i in embedding.tolist()])
                     f.write(f'{word} {vector}\n')
+            # Test the model
+            test_iterator, _ = test_data(args, device)
+            evaluate(args, model, test_iterator, device)
 
 def rnn_model(args, vocab, PAD_IDX):
     INPUT_DIM = len(vocab)
