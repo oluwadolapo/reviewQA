@@ -4,7 +4,6 @@ import torch
 
 from classifier.cnn import config
 from classifier.cnn.data import test_data
-from train_classifier_cnn import cnn_model, _set_random_seeds
 from utils import flat_accuracy, joint_metrics, confusion
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -24,8 +23,6 @@ def evaluate(args, model, test_iterator, device):
     total_FN = 0
     total_TP = 0
     
-    model.load_state_dict(torch.load(args.load_model_path))
-    model = model.to(device)
     model.eval()
     
     for batch in test_iterator:
@@ -81,27 +78,27 @@ def evaluate(args, model, test_iterator, device):
     print(" TP:  {0:.2f}".format(total_TP))
 
 
-def main():
-    args = config.get_params()
-    wandb.init(config=args, project=args.project_name)
-    _set_random_seeds(args.random_seed)
-
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        print('There are %d GPU(s) available.' % torch.cuda.device_count())
-        print('We will use the GPU:', torch.cuda.get_device_name(0))
-    else:
-        print("No GPU available, using CPU instead.")
-        device = torch.device("cpu")
-
-    test_iterator, vocab = test_data(args, device)
-    model = cnn_model(args, vocab, 1)
-    wandb.watch(model)
-    evaluate(args, model, test_iterator, device)
-
 if __name__ == "__main__":
     try:
-        main()
+        from train_classifier_cnn import cnn_model, _set_random_seeds
+        args = config.get_params()
+        wandb.init(config=args, project=args.project_name)
+        _set_random_seeds(args.random_seed)
+
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            print('There are %d GPU(s) available.' % torch.cuda.device_count())
+            print('We will use the GPU:', torch.cuda.get_device_name(0))
+        else:
+            print("No GPU available, using CPU instead.")
+            device = torch.device("cpu")
+
+        test_iterator, vocab = test_data(args, device)
+        model = cnn_model(args, vocab, 1)
+        model.load_state_dict(torch.load(args.load_model_path))
+        model = model.to(device)
+        wandb.watch(model)
+        evaluate(args, model, test_iterator, device)
     except KeyboardInterrupt:
         print('-' * 89)
         print('Exiting Early')

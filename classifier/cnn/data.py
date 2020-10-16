@@ -69,7 +69,8 @@ def test_data(args, device):
                                     test = args.test_file_name,
                                     format = 'json',
                                     fields = fields)
-    
+  
+    """
     custom_embeddings = voc.Vectors(name = args.load_emb_path,
                                   #cache = 'custom_embeddings',
                                   unk_init = torch.Tensor.normal_)
@@ -78,7 +79,8 @@ def test_data(args, device):
     TEXT.build_vocab(train_data,
                 max_size = args.max_voc_size, 
                 vectors = custom_embeddings)
-
+    """
+    TEXT.build_vocab(train_data, max_size = args.max_voc_size, vectors = "glove.6B.100d", unk_init = torch.Tensor.normal_)
     LABEL.build_vocab(train_data)
 
     test_iterator = data.BucketIterator(test_data, 
