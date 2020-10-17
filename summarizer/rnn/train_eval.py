@@ -42,7 +42,8 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     decoder_input = decoder_input.to(device)
 
     # Set initial decoder hidden state to the encoder's final hidden state
-    decoder_hidden = encoder_hidden[:decoder.n_layers]
+    #decoder_hidden = encoder_hidden[:decoder.n_layers]
+    decoder_hidden = torch.unsqueeze(encoder_hidden, 0)
 
     # Determine if we are using teacher forcing this iteration
     #use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False

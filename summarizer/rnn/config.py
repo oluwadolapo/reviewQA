@@ -10,15 +10,15 @@ def get_params():
                         help='The type of rnn model to be used')
     parser.add_argument('--with_attention', dest='with_attention', action='store_true',
                         default=False, help='Attention mechanism included or not?')
-    parser.add_argument('--emb_dim', dest='emb_dim', type=int, default=100,
+    parser.add_argument('--emb_dim', dest='emb_dim', type=int, default=256,
                         help='Embedding size')
     parser.add_argument('--dropout', dest='dropout', type=int, default=0.1,
                         help='Dropout')
-    parser.add_argument('--hidden_size', dest='hidden_size', type=int, default=500,
+    parser.add_argument('--hidden_size', dest='hidden_size', type=int, default=512,
                         help='LSTM hidden dimension')
-    parser.add_argument('--encoder_n_layers', dest='encoder_n_layers', type=int, default=2,
+    parser.add_argument('--encoder_n_layers', dest='encoder_n_layers', type=int, default=1,
                         help='Number of LSTM encoder layers')
-    parser.add_argument('--decoder_n_layers', dest='decoder_n_layers', type=int, default=2,
+    parser.add_argument('--decoder_n_layers', dest='decoder_n_layers', type=int, default=1,
                         help='Number of LSTM decoder layers')
     parser.add_argument('--model_path', dest='model_path', type=str, default=None,
                         help='Model Path if not training from scratch')

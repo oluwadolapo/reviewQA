@@ -13,10 +13,12 @@ class EncoderRNN(nn.Module):
     # Define layers
     self.embedding = nn.Embedding(input_size, hidden_size)
     self.gru = nn.GRU(hidden_size, hidden_size, n_layers, dropout=(0 if n_layers == 1 else dropout), bidirectional = True)
+    self.fc = nn.Linear(hidden_size * 2, hidden_size)
+    self.dropout = nn.Dropout(dropout)
 
   def forward(self, input_seq, input_lengths, hidden=None):
     # Convert word indexes to embeddings
-    embedded = self.embedding(input_seq)
+    embedded = self.dropout(self.embedding(input_seq))
     # Pack padded batch of sequences for RNN module
     packed = nn.utils.rnn.pack_padded_sequence(embedded, input_lengths)
     # Forward pass through GRU
@@ -26,6 +28,10 @@ class EncoderRNN(nn.Module):
     # Sum bidirectional GRU outputs
     outputs = outputs[:, :, :self.hidden_size] + outputs[:, :, self.hidden_size:]
     # Return output and final hidden state
+    
+    #initial decoder hidden is final hidden state of the forwards and backwards 
+    #  encoder RNNs fed through a linear layer
+    hidden = torch.tanh(self.fc(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim = 1)))
     return outputs, hidden
 
 
