@@ -71,9 +71,9 @@ class ReadData:
         df = pd.read_json(args.data_path, orient='split')
     
         if args.test_mode:
-            df = df[int(0.99*len(df)):]
+            df = df[int(0.98*len(df)):]
         else:
-            df = df[:int(0.99*len(df))]
+            df = df[:int(0.98*len(df))]
         
         questions = [q if q.endswith("?") else q+"?" for q in df.question]
         reviews = [r for r in df.passages]

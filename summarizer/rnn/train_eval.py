@@ -43,7 +43,11 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
 
     # Set initial decoder hidden state to the encoder's final hidden state
     #decoder_hidden = encoder_hidden[:decoder.n_layers]
-    decoder_hidden = torch.unsqueeze(encoder_hidden, 0)
+    #decoder_hidden = torch.unsqueeze(encoder_hidden, 0)
+    decoder_hidden = encoder_hidden.unsqueeze(-1)
+    decoder_hidden = decoder_hidden.transpose(2, 0)
+    decoder_hidden = decoder_hidden.transpose(2, 1)
+    #import IPython; IPython.embed(); exit(1)
 
     # Determine if we are using teacher forcing this iteration
     #use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
@@ -95,7 +99,11 @@ def validate(args, batches, encoder, decoder, device):
     decoder_input = decoder_input.to(device)
 
     # Set initial decoder hidden state to the encoder's final hidden state
-    decoder_hidden = encoder_hidden[:decoder.n_layers]
+    #decoder_hidden = encoder_hidden[:decoder.n_layers]
+    #decoder_hidden = torch.unsqueeze(encoder_hidden, 0)
+    decoder_hidden = encoder_hidden.unsqueeze(-1)
+    decoder_hidden = decoder_hidden.transpose(2, 0)
+    decoder_hidden = decoder_hidden.transpose(2, 1)
 
     # Determine if we are using teacher forcing this iteration
     #use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
