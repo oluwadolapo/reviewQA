@@ -69,7 +69,7 @@ class ReadData:
         print()
         print("Reading and processing file...Please wait")
         df = pd.read_json(args.data_path, orient='split')
-        df = df.head(100)
+        #df = df.head(100)
         if args.test_mode:
             df = df[int(0.98*len(df)):]
         else:

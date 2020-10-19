@@ -7,7 +7,7 @@ import nltk
 from rouge import Rouge
 
 from summarizer.rnn.data import ReadData
-from summarizer.rnn.model import EncoderRNN, DecoderRNN, AttnDecoderRNN1
+from summarizer.rnn.model import EncoderRNN, DecoderRNN, AttnDecoderRNN1, AttnDecoderRNN2
 
 def get_params():
     parser = argparse.ArgumentParser()
@@ -25,11 +25,11 @@ def get_params():
                         help='Maximum output length for decoder')
     parser.add_argument('--dropout', dest='dropout', type=int, default=0.1,
                         help='Dropout')
-    parser.add_argument('--hidden_size', dest='hidden_size', type=int, default=500,
+    parser.add_argument('--hidden_size', dest='hidden_size', type=int, default=512,
                         help='LSTM hidden dimension')
-    parser.add_argument('--encoder_n_layers', dest='encoder_n_layers', type=int, default=2,
+    parser.add_argument('--encoder_n_layers', dest='encoder_n_layers', type=int, default=1,
                         help='Number of LSTM encoder layers')
-    parser.add_argument('--decoder_n_layers', dest='decoder_n_layers', type=int, default=2,
+    parser.add_argument('--decoder_n_layers', dest='decoder_n_layers', type=int, default=1,
                         help='Number of LSTM decoder layers')
     parser.add_argument('--with_attention', dest='with_attention', action='store_true',
                         default=False, help='Attention mechanism included or not?')
@@ -108,6 +108,10 @@ def prepare_data(args):
     
     return vocab_json, batches
 
+def create_mask(src):
+    mask = (src != 0).permute(1, 0)
+    return mask
+
 def test(args, vocab_json, batches, encoder, decoder, device):
     encoder.eval()
     decoder.eval()
@@ -121,6 +125,9 @@ def test(args, vocab_json, batches, encoder, decoder, device):
         input_variable = input_variable.to(device)
         lengths = lengths.to(device)
 
+        encoder_mask = create_mask(input_variable)
+        encoder_mask = encoder_mask.to(device)
+
         # Forward pass through encoder
         encoder_outputs, encoder_hidden = encoder(input_variable, lengths)
 
@@ -129,12 +136,15 @@ def test(args, vocab_json, batches, encoder, decoder, device):
         decoder_input = decoder_input.to(device)
 
         # Set initial decoder hidden state to the encoder's final hidden state
-        decoder_hidden = encoder_hidden[:decoder.n_layers]
+        #decoder_hidden = encoder_hidden[:decoder.n_layers]
+        decoder_hidden = encoder_hidden.unsqueeze(-1)
+        decoder_hidden = decoder_hidden.transpose(2, 0)
+        decoder_hidden = decoder_hidden.transpose(2, 1)
 
         answer = []
         for t in range(args.max_output_length):
             if args.with_attention:
-                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
+                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
             else:
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             # No teacher forcing: next input is decoder's own current output
@@ -175,7 +185,7 @@ def main():
     encoder = EncoderRNN(vocab_json["voc"]["num_words"], args.hidden_size, args.encoder_n_layers, args.dropout)
     
     if args.with_attention:
-        decoder = AttnDecoderRNN1(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
+        decoder = AttnDecoderRNN2(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
     else:
         decoder = DecoderRNN(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
     
