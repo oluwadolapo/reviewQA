@@ -113,3 +113,81 @@ class AttnDecoderRNN1(nn.Module):
     output = F.softmax(output, dim=1)
     # Return output and final hidden state
     return output, hidden
+
+class Attention(nn.Module):
+    def __init__(self, hidden_dim):
+        super().__init__()
+        self.attn = nn.Linear(hidden_dim * 2, hidden_dim)
+        self.v = nn.Linear(hidden_dim, 1, bias = False)
+        
+    def forward(self, hidden, encoder_outputs, mask):
+        hidden = hidden.squeeze(0)
+        #hidden = [batch size, dec hid dim]
+        #encoder_outputs = [src len, batch size, enc hid dim]
+        batch_size = encoder_outputs.shape[1]
+        src_len = encoder_outputs.shape[0]
+        #repeat decoder hidden state src_len times
+        hidden = hidden.unsqueeze(1).repeat(1, src_len, 1)
+        encoder_outputs = encoder_outputs.permute(1, 0, 2)
+        #hidden = [batch size, src len, dec hid dim]
+        #encoder_outputs = [batch size, src len, enc hid dim]
+        energy = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim = 2))) 
+        #energy = [batch size, src len, dec hid dim]
+        attention = self.v(energy).squeeze(2)
+        #attention = [batch size, src len]
+        attention = attention.masked_fill(mask == 0, -1e10)
+        return F.softmax(attention, dim = 1)
+
+class AttnDecoderRNN2(nn.Module):
+  def __init__(self, hidden_dim, output_dim, n_layers=1, dropout=0.1, max_length=10):
+    super(AttnDecoderRNN2, self).__init__()
+
+    self.attention = Attention(hidden_dim)
+    self.output_dim = output_dim
+    #self.embedding = nn.Embedding(output_dim, emb_dim)
+    self.embedding = nn.Embedding(output_dim, hidden_dim)
+    #self.rnn = nn.GRU((enc_hid_dim * 2) + emb_dim, dec_hid_dim)
+    self.rnn = nn.GRU(hidden_dim *2, hidden_dim, n_layers, dropout=(0 if n_layers == 1 else dropout))
+    #self.fc_out = nn.Linear((enc_hid_dim * 2) + dec_hid_dim + emb_dim, output_dim)
+    self.fc_out = nn.Linear(hidden_dim*3, output_dim)
+    #self.dropout = nn.Dropout(dropout
+    self.dropout = nn.Dropout(dropout)
+    
+  def forward(self, input_step, hidden, encoder_outputs, mask): 
+    #input = [batch size]
+    #hidden = [1, batch size, dec hid dim]
+    #encoder_outputs = [src len, batch size, enc hid dim]
+    #mask = [batch size, src len]
+
+    # Note: we run this one step (batch of words) at a time
+    # Get embedding of current input_word
+    embedded = self.embedding(input_step)
+    embedded = self.dropout(embedded)
+    #embedded = [1, batch size, emb dim]
+    a = self.attention(hidden, encoder_outputs, mask)    
+    #a = [batch size, src len]
+    a = a.unsqueeze(1)
+    #a = [batch size, 1, src len]
+    encoder_outputs = encoder_outputs.permute(1, 0, 2)
+    #encoder_outputs = [batch size, src len, enc hid dim]
+    weighted = torch.bmm(a, encoder_outputs)
+    #weighted = [batch size, 1, enc hid dim]
+    weighted = weighted.permute(1, 0, 2)
+    #weighted = [1, batch size, enc hid dim]
+    rnn_input = torch.cat((embedded, weighted), dim = 2)
+    #rnn_input = [1, batch size, (enc hid dim * 2) + emb dim]  
+    output, hidden = self.rnn(rnn_input, hidden)
+    #output = [seq len, batch size, dec hid dim * n directions]
+    #hidden = [n layers * n directions, batch size, dec hid dim]
+    #seq len, n layers and n directions will always be 1 in this decoder, therefore:
+    #output = [1, batch size, dec hid dim]
+    #hidden = [1, batch size, dec hid dim]
+    #this also means that output == hidden
+    assert (output == hidden).all()    
+    embedded = embedded.squeeze(0)
+    output = output.squeeze(0)
+    weighted = weighted.squeeze(0)
+    prediction = self.fc_out(torch.cat((output, weighted, embedded), dim = 1))
+    #prediction = [1, batch size, output dim]
+    prediction = F.softmax(prediction, dim=1)
+    return prediction, hidden

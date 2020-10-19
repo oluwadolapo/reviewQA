@@ -17,6 +17,9 @@ def maskNLLLoss(decoder_out, target, mask):
   loss = loss.mean()
   return loss, nTotal.item()
 
+def create_mask(src):
+  mask = (src != 0).permute(1, 0)
+  return mask
 
 def train(args, batches, encoder, decoder, encoder_optimizer,
             decoder_optimizer, device):
@@ -34,6 +37,8 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     lengths = lengths.to(device)
     target_variable = target_variable.to(device)
     mask = mask.to(device)
+    encoder_mask = create_mask(input_variable)
+    encoder_mask = encoder_mask.to(device)
     # Forward pass through encoder
     encoder_outputs, encoder_hidden = encoder(input_variable, lengths)
 
@@ -47,7 +52,6 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     decoder_hidden = encoder_hidden.unsqueeze(-1)
     decoder_hidden = decoder_hidden.transpose(2, 0)
     decoder_hidden = decoder_hidden.transpose(2, 1)
-    #import IPython; IPython.embed(); exit(1)
 
     # Determine if we are using teacher forcing this iteration
     #use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
@@ -57,7 +61,7 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     if use_teacher_forcing:
       for t in range(max_target_len):
         if args.with_attention:
-          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
         else:
           decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
         # Teacher forcing: next input is current target
@@ -91,6 +95,8 @@ def validate(args, batches, encoder, decoder, device):
     lengths = lengths.to(device)
     target_variable = target_variable.to(device)
     mask = mask.to(device)
+    encoder_mask = create_mask(input_variable)
+    encoder_mask = encoder_mask.to(device)
     # Forward pass through encoder
     encoder_outputs, encoder_hidden = encoder(input_variable, lengths)
 
@@ -113,7 +119,7 @@ def validate(args, batches, encoder, decoder, device):
     if use_teacher_forcing:
       for t in range(max_target_len):
         if args.with_attention:
-          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
         else:
           decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
         # Teacher forcing: next input is current target

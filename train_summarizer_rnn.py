@@ -12,7 +12,7 @@ import json
 
 from summarizer.rnn import config
 from summarizer.rnn.data import ReadData, Vocabulary, PrepareData
-from summarizer.rnn.model import EncoderRNN, DecoderRNN, AttnDecoderRNN1
+from summarizer.rnn.model import EncoderRNN, DecoderRNN, AttnDecoderRNN1, AttnDecoderRNN2
 from summarizer.rnn.train_eval import train, validate
 
 def _set_random_seeds(seed):
@@ -101,7 +101,7 @@ def main():
     ##### Define the encoder and decoder #####
     encoder = EncoderRNN(voc.num_words, args.hidden_size, args.encoder_n_layers, args.dropout)
     if args.with_attention:
-        decoder = AttnDecoderRNN1(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
+        decoder = AttnDecoderRNN2(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
     else:
         decoder = DecoderRNN(args.hidden_size, voc.num_words, args.decoder_n_layers, args.dropout)
     encoder = encoder.to(device)
