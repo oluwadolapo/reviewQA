@@ -17,6 +17,7 @@ spacy = "*"
 ipython = "*"
 rouge = "*"
 nltk = "*"
+rouge-metric = "*"
 
 [requires]
 python_version = "3.8"
