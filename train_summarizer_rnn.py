@@ -30,6 +30,7 @@ def prepare_data(args):
         voc.addSentence(pair[1])
     
     pairs = voc.filter_voc(pairs)
+    print(len(pairs))
     pre_data = PrepareData()
     batches = []
     """

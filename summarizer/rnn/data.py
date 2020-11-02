@@ -1,5 +1,6 @@
 import os
 import nltk
+from nltk.tokenize.treebank import TreebankWordDetokenizer as detokenizer
 import unicodedata
 import re
 import itertools
@@ -70,9 +71,7 @@ class ReadData:
         print("Reading and processing file...Please wait")
         df = pd.read_json(args.data_path, orient='split')
         #df = df.head(100)
-        if args.test_mode:
-            df = df[int(0.98*len(df)):]
-        else:
+        if not args.test_mode:
             df = df[:int(0.98*len(df))]
         
         questions = [q if q.endswith("?") else q+"?" for q in df.question]
@@ -94,7 +93,19 @@ class ReadData:
         
         # Split every line into pairs and normalize
         #pairs = [[self.normalizeString(sentence) for sentence in pair.split('\t')] for pair in lines]
-        pairs = self.filterPairs(pairs)
+
+        # Truncate input sequence to MAX_LENGTH
+        new_pairs = []
+        for pair in pairs:
+            pair[0] = nltk.word_tokenize(pair[0])
+            if len(pair[0]) > self.MAX_LENGTH:
+                pair[0] = detokenizer().detokenize(pair[0][:self.MAX_LENGTH]).lower()
+                new_pairs.append(pair)
+            else:
+                pair[0] = detokenizer().detokenize(pair[0]).lower()
+                new_pairs.append(pair)
+
+        #pairs = self.filterPairs(pairs)
         print("Done Reading!")
         print("size of remaining pairs: " + str(len(pairs)))
         return pairs

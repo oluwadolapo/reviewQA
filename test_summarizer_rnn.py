@@ -4,9 +4,12 @@ import itertools
 import json
 import torch
 import nltk
+import unicodedata
+import re
 from rouge import Rouge
+import pandas as pd
 
-from summarizer.rnn.data import ReadData
+#from summarizer.rnn.data import ReadData
 from summarizer.rnn.model import EncoderRNN, DecoderRNN, AttnDecoderRNN1, AttnDecoderRNN2
 
 def get_params():
@@ -39,6 +42,59 @@ def get_params():
                         default=False, help='Testing mode?')
     args = parser.parse_args()
     return args
+
+class ReadData:
+    def __init__(self, MAX_LENGTH):
+        """
+        MAX_LENGTH ==> Maximum sentence length to consider (max words)
+        """
+        self.MAX_LENGTH = MAX_LENGTH
+
+    def unicodeToAscii(self, s):
+        """
+        Turns a Unicode string to plain ASCII
+        """
+        return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+
+    def normalizeString(self, s):
+        """
+        Convert to lowercase, trim white spaces, lines...etc, and remove
+        non-letter characters.
+        """
+        s = self.unicodeToAscii(s.lower().strip())
+        s = re.sub(r"([.!?])",r" \1", s)
+        s = re.sub(r"[^a-zA-Z.!?]+", r" ", s)
+        s = re.sub(r"\s+", r" ", s).strip()
+        return s
+
+    def readFile(self, args):
+        print()
+        print("Reading and processing file...Please wait")
+        df = pd.read_json(args.data_path, orient='split')
+        #df = df.head(100)
+        if not args.test_mode:
+            df = df[:int(0.98*len(df))]
+        
+        questions = [q if q.endswith("?") else q+"?" for q in df.question]
+        reviews = [r for r in df.passages]
+        answers = [a for a in df.answers]
+
+        questions = ["<s> " + q.lower() + " </s>" for q in questions]
+        reviews = [[p.lower() for p in r] for r in reviews]
+        answers = ["<s> " + a.lower() + " </s>" for a in answers]
+
+        pairs = []
+        for i, q in enumerate(questions):
+            pair = []
+            for r in reviews[i]:
+                q = q + " " + r
+            pair.append(q)
+            pair.append(answers[i])
+            pairs.append(pair)
+        
+        print("Done Reading!")
+        print("size of remaining pairs: " + str(len(pairs)))
+        return pairs
 
 class PrepareData:
     def __init__(self):
@@ -117,8 +173,15 @@ def test(args, vocab_json, batches, encoder, decoder, device):
     decoder.eval()
     SOS_token = 2
 
+    df = pd.read_json(args.data_path, orient='split')
+    #df = df[:1]
+    #answers = [a for a in df.answers]
+    multiple_answers = [a for a in df.multiple_answers]
+    #answers = ["<s> " + a.lower() + " </s>" for a in answers]
+    ref_answers = [["<s> " + a.lower() + " </s>" for a in ans] for ans in multiple_answers]
+
     pred_answers = []
-    ref_answers = []
+    #ref_answers = []
     #for i in range(args.data_size//args.batch_size):
     for i in range(len(batches)):
         input_variable, lengths, ref_output = batches[i]
@@ -160,13 +223,84 @@ def test(args, vocab_json, batches, encoder, decoder, device):
         for word in answer:
             ans += word + " "
         pred_answers.append(ans)
-        ref_answers.append(ref_output[0])
+        #ref_answers.append(ref_output[0])
         
+    
     rouge = Rouge()
-    #import IPython; IPython.embed(); exit(1)
-    scores = rouge.get_scores(pred_answers, ref_answers, avg=True)
+    
+    all_rouge_1p = []
+    all_rouge_1r = []
+    all_rouge_1f = []
+    all_rouge_2p = []
+    all_rouge_2r = []
+    all_rouge_2f = []
+    all_rouge_lp = []
+    all_rouge_lr = []
+    all_rouge_lf = []
 
-    print(scores)
+    for count in range(len(pred_answers)):
+        rouge_1p = []
+        rouge_1r = []
+        rouge_1f = []
+        rouge_2p = []
+        rouge_2r = []
+        rouge_2f = []
+        rouge_lp = []
+        rouge_lr = []
+        rouge_lf = []
+        for ans in ref_answers[count]:
+            hyp = []
+            ref = []
+            hyp.append(pred_answers[count])
+            ref.append(ans)
+            scores = rouge.get_scores(hyp, ref, avg=True)
+            rouge_1p.append(scores['rouge-1']['p'])
+            rouge_1r.append(scores['rouge-1']['r'])
+            rouge_1f.append(scores['rouge-1']['f'])
+            rouge_2p.append(scores['rouge-2']['p'])
+            rouge_2r.append(scores['rouge-2']['r'])
+            rouge_2f.append(scores['rouge-2']['f'])
+            rouge_lp.append(scores['rouge-l']['p'])
+            rouge_lr.append(scores['rouge-l']['r'])
+            rouge_lf.append(scores['rouge-l']['f'])
+
+        rouge_1p.sort()
+        rouge_1r.sort()
+        rouge_1f.sort()
+        rouge_2p.sort()
+        rouge_2r.sort()
+        rouge_2f.sort()
+        rouge_lp.sort()
+        rouge_lr.sort()
+        rouge_lf.sort()
+
+        all_rouge_1p.append(rouge_1p[-1])
+        all_rouge_1r.append(rouge_1r[-1])
+        all_rouge_1f.append(rouge_1f[-1])
+        all_rouge_2p.append(rouge_2p[-1])
+        all_rouge_2r.append(rouge_2r[-1])
+        all_rouge_2f.append(rouge_2f[-1])
+        all_rouge_lp.append(rouge_lp[-1])
+        all_rouge_lr.append(rouge_lr[-1])
+        all_rouge_lf.append(rouge_lf[-1])
+    
+    print()
+    print("rouge_1p:", sum(all_rouge_1p)/len(all_rouge_1p))
+    print("rouge_1r:", sum(all_rouge_1r)/len(all_rouge_1r))
+    print("rouge_1f:", sum(all_rouge_1f)/len(all_rouge_1f))
+    print()
+    print("rouge_2p:", sum(all_rouge_2p)/len(all_rouge_2p))
+    print("rouge_2r:", sum(all_rouge_2r)/len(all_rouge_2r))
+    print("rouge_2f:", sum(all_rouge_2f)/len(all_rouge_2f))
+    print()
+    print("rouge_lp:", sum(all_rouge_lp)/len(all_rouge_lp))
+    print("rouge_lr:", sum(all_rouge_lr)/len(all_rouge_lr))
+    print("rouge_lf:", sum(all_rouge_lf)/len(all_rouge_lf))
+
+    #rouge = Rouge()
+    #scores = rouge.get_scores(pred_answers, ref_answers, avg=True)
+
+    #print(scores)
     #import IPython; IPython.embed(); exit(1)
     
 

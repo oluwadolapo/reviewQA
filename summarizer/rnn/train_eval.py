@@ -54,8 +54,8 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     decoder_hidden = decoder_hidden.transpose(2, 1)
 
     # Determine if we are using teacher forcing this iteration
-    #use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
-    use_teacher_forcing = True
+    use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
+    #use_teacher_forcing = True
     step_loss = torch.zeros(1).to(device)
     # Forward batch of sequences through decoder one step at a time
     if use_teacher_forcing:
@@ -78,6 +78,30 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
       #Zero gradients
       encoder_optimizer.zero_grad()
       decoder_optimizer.zero_grad()
+
+    else:
+      for t in range(max_target_len):
+        if args.with_attention:
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+        else:
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+        # No teacher forcing: next input is decoder's own current output
+        _, topi = decoder_output.topk(1)
+        decoder_input = torch.LongTensor([[topi[i][0] for i in range (args.batch_size)]])
+        decoder_input = decoder_input.to(device)
+        #Calculate and accumulate loss
+        mask_loss, nTotal = maskNLLLoss(decoder_output, target_variable[t], mask[t])
+        step_loss += mask_loss
+
+      # Perform backpropagation
+      step_loss.backward()
+      # Adjust model weights
+      encoder_optimizer.step()
+      decoder_optimizer.step()
+      #Zero gradients
+      encoder_optimizer.zero_grad()
+      decoder_optimizer.zero_grad()
+
   #return sum(print_losses) / n_totals
   return step_loss.item(), encoder, decoder
 
@@ -116,6 +140,8 @@ def validate(args, batches, encoder, decoder, device):
     use_teacher_forcing = True
     step_loss = torch.zeros(1).to(device)
     # Forward batch of sequences through decoder one step at a time
+    # Determine if we are using teacher forcing this iteration
+    use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
     if use_teacher_forcing:
       for t in range(max_target_len):
         if args.with_attention:
@@ -127,10 +153,25 @@ def validate(args, batches, encoder, decoder, device):
         #Calculate and accumulate loss
         mask_loss, nTotal = maskNLLLoss(decoder_output, target_variable[t], mask[t])
         step_loss += mask_loss
+
       
       # Perform backpropagation
       #step_loss = step_loss/step_num
       loss.append(step_loss.item())
-      avg_loss = sum(loss)/len(loss)
+    else:
+      for t in range(max_target_len):
+        if args.with_attention:
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+        else:
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+        # No teacher forcing: next input is decoder's own current output
+        _, topi = decoder_output.topk(1)
+        decoder_input = torch.LongTensor([[topi[i][0] for i in range (args.batch_size)]])
+        decoder_input = decoder_input.to(device)
+        #Calculate and accumulate loss
+        mask_loss, nTotal = maskNLLLoss(decoder_output, target_variable[t], mask[t])
+        step_loss += mask_loss
+
+  avg_loss = sum(loss)/len(loss)
   return avg_loss
     
