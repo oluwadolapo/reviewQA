@@ -22,9 +22,9 @@ def get_params():
                         help='Directory for loading testing data')
     parser.add_argument('--load_vocab_path', dest='load_vocab_path', type=str, default=None,
                         help='Directory for loading vocabulary')
-    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=1000,
+    parser.add_argument('--max_input_length', dest='max_input_length', type=int, default=200,
                         help='Maximum input length for encoder')
-    parser.add_argument('--max_output_length', dest='max_output_length', type=int, default=512,
+    parser.add_argument('--max_output_length', dest='max_output_length', type=int, default=25,
                         help='Maximum output length for decoder')
     parser.add_argument('--dropout', dest='dropout', type=int, default=0.1,
                         help='Dropout')
@@ -207,7 +207,8 @@ def test(args, vocab_json, batches, encoder, decoder, device):
         answer = []
         for t in range(args.max_output_length):
             if args.with_attention:
-                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+                #decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
             else:
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
             # No teacher forcing: next input is decoder's own current output
@@ -319,7 +320,7 @@ def main():
     encoder = EncoderRNN(vocab_json["voc"]["num_words"], args.hidden_size, args.encoder_n_layers, args.dropout)
     
     if args.with_attention:
-        decoder = AttnDecoderRNN2(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
+        decoder = AttnDecoderRNN1(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
     else:
         decoder = DecoderRNN(args.hidden_size, vocab_json["voc"]["num_words"], args.decoder_n_layers, args.dropout)
     

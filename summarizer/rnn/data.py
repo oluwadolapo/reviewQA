@@ -154,7 +154,7 @@ class Vocabulary:
         for word in keep_words:
             self.addWord(word)
 
-    def filter_voc(self, pairs, MIN_COUNT = 3):
+    def filter_voc(self, pairs, MIN_COUNT = 1000):
         """
         Filters out pairs with trimmed words
         """

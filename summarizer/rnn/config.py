@@ -38,11 +38,11 @@ def get_params():
                         default=False, help='Train from scratch or not?')
     parser.add_argument('--num_epoch', dest='num_epoch', type=int, default=1,
                         help='Number of training epochs')
-    parser.add_argument('--max_length', dest='max_length', type=int, default=512,
+    parser.add_argument('--max_length', dest='max_length', type=int, default=200,
                         help='Maximum input length for encoder')
-    parser.add_argument('--teacher_forcing_ratio', dest='teacher_forcing_ratio', type=int, default=0.5,
+    parser.add_argument('--teacher_forcing_ratio', dest='teacher_forcing_ratio', type=int, default=1.0,
                         help='Teacher forcing ratio')
-    parser.add_argument('--max_output_length', dest='max_output_length', type=int, default=512,
+    parser.add_argument('--max_output_length', dest='max_output_length', type=int, default=25,
                         help='Maximum output length for decoder')
     parser.add_argument('--batch_size', dest='batch_size', type=int, default=16,
                         help='Training batch size')

@@ -54,14 +54,15 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     decoder_hidden = decoder_hidden.transpose(2, 1)
 
     # Determine if we are using teacher forcing this iteration
-    use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
+    use_teacher_forcing = True if random.random() <= args.teacher_forcing_ratio else False
     #use_teacher_forcing = True
     step_loss = torch.zeros(1).to(device)
     # Forward batch of sequences through decoder one step at a time
     if use_teacher_forcing:
       for t in range(max_target_len):
         if args.with_attention:
-          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          #decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
         else:
           decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
         # Teacher forcing: next input is current target
@@ -82,7 +83,8 @@ def train(args, batches, encoder, decoder, encoder_optimizer,
     else:
       for t in range(max_target_len):
         if args.with_attention:
-          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          #decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
         else:
           decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
         # No teacher forcing: next input is decoder's own current output
@@ -141,11 +143,12 @@ def validate(args, batches, encoder, decoder, device):
     step_loss = torch.zeros(1).to(device)
     # Forward batch of sequences through decoder one step at a time
     # Determine if we are using teacher forcing this iteration
-    use_teacher_forcing = True if random.random() < args.teacher_forcing_ratio else False
+    use_teacher_forcing = True if random.random() <= args.teacher_forcing_ratio else False
     if use_teacher_forcing:
       for t in range(max_target_len):
         if args.with_attention:
-          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          #decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
         else:
           decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
         # Teacher forcing: next input is current target
@@ -161,7 +164,8 @@ def validate(args, batches, encoder, decoder, device):
     else:
       for t in range(max_target_len):
         if args.with_attention:
-          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          #decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs, encoder_mask)
+          decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_outputs)
         else:
           decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
         # No teacher forcing: next input is decoder's own current output
