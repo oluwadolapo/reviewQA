@@ -1,11 +1,8 @@
 import torch
 from transformers import BartTokenizer, BartForConditionalGeneration
 import pandas as pd
-from rouge import Rouge
-from rouge_metric import PyRouge
 import argparse
-
-#from summarizer.bart.data import prepare_data
+import json
 
 def get_params():
     parser = argparse.ArgumentParser()
@@ -13,6 +10,8 @@ def get_params():
                         help='Directory for bart model')
     parser.add_argument('--data_path', dest='data_path', type=str, default=None,
                         help='Directory for testing data')
+    parser.add_argument('--output_path', dest='output_path', type=str, default='output_bart.json',
+                        help='Directory for saving output json file')
     args = parser.parse_args()
     return args
 
@@ -70,89 +69,27 @@ def main():
     df = pd.read_json(args.data_path, orient='split')
     #df = df[:1]
     quest_rev, ref_answers = prepare_data(df)
+    print()
+    print('Testing the model')
     pred_answers = []
     for i in range(len(quest_rev)):
         answer = model.predict(quest_rev[i])[0]
         pred_answers.append(answer)
+    
+    questions = [q.lower() if q.endswith("?") else q.lower()+"?" for q in df.question]
+    multiple_answers = [[a.lower() for a in ans] for ans in df.multiple_answers]
+    print()
+    print('Saving the outputs')
 
-    rouge = Rouge()
+    output_json = {'Question':questions,
+                    'Pred_answer':pred_answers,
+                    'Ref_answers':multiple_answers}
 
-    all_rouge_1p = []
-    all_rouge_1r = []
-    all_rouge_1f = []
-    all_rouge_2p = []
-    all_rouge_2r = []
-    all_rouge_2f = []
-    all_rouge_lp = []
-    all_rouge_lr = []
-    all_rouge_lf = []
-
-    for count in range(len(pred_answers)):
-        rouge_1p = []
-        rouge_1r = []
-        rouge_1f = []
-        rouge_2p = []
-        rouge_2r = []
-        rouge_2f = []
-        rouge_lp = []
-        rouge_lr = []
-        rouge_lf = []
-        for ans in ref_answers[count]:
-            hyp = []
-            ref = []
-            hyp.append(pred_answers[count])
-            ref.append(ans)
-            scores = rouge.get_scores(hyp, ref, avg=True)
-            rouge_1p.append(scores['rouge-1']['p'])
-            rouge_1r.append(scores['rouge-1']['r'])
-            rouge_1f.append(scores['rouge-1']['f'])
-            rouge_2p.append(scores['rouge-2']['p'])
-            rouge_2r.append(scores['rouge-2']['r'])
-            rouge_2f.append(scores['rouge-2']['f'])
-            rouge_lp.append(scores['rouge-l']['p'])
-            rouge_lr.append(scores['rouge-l']['r'])
-            rouge_lf.append(scores['rouge-l']['f'])
-
-        rouge_1p.sort()
-        rouge_1r.sort()
-        rouge_1f.sort()
-        rouge_2p.sort()
-        rouge_2r.sort()
-        rouge_2f.sort()
-        rouge_lp.sort()
-        rouge_lr.sort()
-        rouge_lf.sort()
-
-        all_rouge_1p.append(rouge_1p[-1])
-        all_rouge_1r.append(rouge_1r[-1])
-        all_rouge_1f.append(rouge_1f[-1])
-        all_rouge_2p.append(rouge_2p[-1])
-        all_rouge_2r.append(rouge_2r[-1])
-        all_rouge_2f.append(rouge_2f[-1])
-        all_rouge_lp.append(rouge_lp[-1])
-        all_rouge_lr.append(rouge_lr[-1])
-        all_rouge_lf.append(rouge_lf[-1])
+    with open(args.output_path, 'w') as json_file:
+        json.dump(output_json, json_file)
     
     print()
-    print("rouge_1p:", sum(all_rouge_1p)/len(all_rouge_1p))
-    print("rouge_1r:", sum(all_rouge_1r)/len(all_rouge_1r))
-    print("rouge_1f:", sum(all_rouge_1f)/len(all_rouge_1f))
-    print()
-    print("rouge_2p:", sum(all_rouge_2p)/len(all_rouge_2p))
-    print("rouge_2r:", sum(all_rouge_2r)/len(all_rouge_2r))
-    print("rouge_2f:", sum(all_rouge_2f)/len(all_rouge_2f))
-    print()
-    print("rouge_lp:", sum(all_rouge_lp)/len(all_rouge_lp))
-    print("rouge_lr:", sum(all_rouge_lr)/len(all_rouge_lr))
-    print("rouge_lf:", sum(all_rouge_lf)/len(all_rouge_lf))
-
-    #rouge = Rouge()
-    #scores = rouge.get_scores(new_pred_answers, new_ref_answers, avg=True)
-    #rouge = PyRouge(rouge_n=(1, 2, 4), rouge_l=True, rouge_w=True,
-                #rouge_w_weight=1.2, rouge_s=True, rouge_su=True, skip_gap=4)
-    #scores = rouge.evaluate(pred_answers, ref_answers)
-
-    #print(scores)
+    print('Done')
 
 if __name__ == "__main__":
     main()

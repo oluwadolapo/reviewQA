@@ -4,3 +4,9 @@ review-summarizer/__pycache__
 
 wandb
 .vector_cache
+
+output_first.json
+output_random.json
+output_bert.json
+output_bart.json
+
