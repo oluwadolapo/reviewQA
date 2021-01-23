@@ -24,7 +24,7 @@ def train(args, model, train_dataloader, device, optimizer, scheduler):
             print(' Batch {:>5,} of {:>5,}.   Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
 
         model.zero_grad()
-        loss = model(input_ids = batch[0].to(device),
+        _, loss = model(input_ids = batch[0].to(device),
                              attention_mask = batch[1].to(device),
                              decoder_input_ids = batch[2].to(device),
                              decoder_attention_mask = batch[3].to(device),
@@ -70,7 +70,7 @@ def eval(model, eval_dataloader, device):
     for batch in eval_dataloader:
 
         with torch.no_grad():
-            val_loss = model(input_ids = batch[0].to(device),
+            _, val_loss = model(input_ids = batch[0].to(device),
                              attention_mask = batch[1].to(device),
                              decoder_input_ids = batch[2].to(device),
                              decoder_attention_mask = batch[3].to(device),

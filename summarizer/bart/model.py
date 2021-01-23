@@ -4,6 +4,9 @@ import torch.nn.functional as F
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
 
 class MyBart(BartForConditionalGeneration):
+    def classifier_head(self, voc_size):
+        self.fc_head = nn.Linear(voc_size, 1)
+
     def forward(self, input_ids, attention_mask=None, encoder_outputs=None,
             decoder_input_ids=None, decoder_attention_mask=None, decoder_cached_states=None,
             use_cache=False, is_training=False):
@@ -26,12 +29,16 @@ class MyBart(BartForConditionalGeneration):
             use_cache=use_cache,
         )
         lm_logits = F.linear(outputs[0], self.model.shared.weight, bias=self.final_logits_bias)
+        voc_size = lm_logits.size()[2]
+        self.classifier_head(voc_size)
+        logits = lm_logits[:,-1,:]
+        classifier_output = self.fc_head(logits)
         if is_training:
             loss_fct = nn.CrossEntropyLoss(reduce=False)
             losses = loss_fct(lm_logits.view(-1, self.config.vocab_size),
                               decoder_input_ids.view(-1))
             loss = torch.sum(losses * decoder_attention_mask.float().view(-1))
-            return loss
+            return classifier_output, loss
         return (lm_logits, ) + outputs[1:]
 
 
