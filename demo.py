@@ -1,8 +1,11 @@
+import json
+import pandas as pd
+import textwrap
+
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 from transformers import BartTokenizer, BartForConditionalGeneration
 
-print()
 
 class AnswerabilityModel:
   def __init__(self, output_dir):
@@ -36,34 +39,50 @@ class SummarizerModel:
     summary = [self.tokenizer.decode(id, skip_special_tokens=True, clean_up_tokenization_spaces=True) for id in summary_ids]
     return summary
 
-question = "is bert simple ?"
-context = """
-We introduce a new language representation model called BERT, which stands for
-Bidirectional Encoder Representations from Transformers. Unlike recent language
-representation models (Peters et al., 2018a; Radford et al., 2018), BERT is
-designed to pretrain deep bidirectional representations from unlabeled text by
-jointly conditioning on both left and right context in all layers. As a result,
-the pre-trained BERT model can be finetuned with just one additional output
-layer to create state-of-the-art models for a wide range of tasks, such as
-question answering and language inference, without substantial taskspecific
-architecture modifications. BERT is conceptually simple and empirically
-powerful. It obtains new state-of-the-art results on eleven natural language
-processing tasks, including pushing the GLUE score to 80.5% (7.7% point absolute
-improvement), MultiNLI accuracy to 86.7% (4.6% absolute improvement), SQuAD v1.1
-question answering Test F1 to 93.2 (1.5 point absolute improvement) and SQuAD
-v2.0 Test F1 to 83.1 (5.1 point absolute improvement).
-"""
-bert_question_context = "[CLS] "+question+" [SEP] "+context
-bart_question_context = "<s> "+question+" </s> "+context
 
-bert_model_dir = "/home/oluwadolapo/Experiments/bertQAnswerability/model_save"
-model = AnswerabilityModel(bert_model_dir)
-answerability = int(model.predict(bert_question_context))
+def main():
+    # Wrap text to 70 character
+    wrapper = textwrap.TextWrapper(width=70)
+    df = pd.read_json('/content/drive/MyDrive/Datasets/demo.json', orient='split')
+    print()
+    answerability = df['is_answerable']
+    print("Answerable idx ===> ", [idx for idx, val in enumerate(answerability) if val == 1])
+    print("Unanswerable idx ===> ", [idx for idx, val in enumerate(answerability) if val == 0])
+    print()
+    
+    idx = int(input("Enter idx to be tested ===> "))
 
-if answerability == 1:
-    bart_model_dir = "/home/oluwadolapo/model_save"
-    model = SummarizerModel(bart_model_dir)
-    answer = model.predict(bart_question_context)[0]
-    print(answer)
-else:
-    print("I don't have an answer to your question")
+    question = df["questionText"][idx]
+    print()
+    print("Question")
+    print(wrapper.fill(question))
+
+    reviews = ""
+    for rev in df["review_snippets"][idx]:
+        reviews += rev + " "
+    print()
+    print("Reviews")
+    print(wrapper.fill(reviews))
+    print()
+    print("Ref Answers")
+    for index, ans in enumerate(df["answers"][idx]):
+        print(index+1, ": ", wrapper.fill(ans['answerText']))
+        print()
+    
+    bert_question_context = "[CLS] "+question+" [SEP] "+reviews
+    bart_question_context = "<s> "+question+" </s> "+reviews
+
+    bert_model_dir = "/content/drive/My Drive/Experiments/BertQAnswerability/model_save1"
+    model = AnswerabilityModel(bert_model_dir)
+    answerability = int(model.predict(bert_question_context))
+
+    if answerability == 1:
+        bart_model_dir = "/content/drive/My Drive/Experiments/Bart_QA/model_save1"
+        model = SummarizerModel(bart_model_dir)
+        answer = model.predict(bart_question_context)[0]
+        print("Generated answer: ", answer)
+    else:
+        print("I don't have an answer to your question")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="{{ url_for('static', filename='js/jquery-3.4.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css?family=Josefin+Sans:300|Open+Sans:300|Oxygen|Material+Icons"
+        rel="stylesheet">
+</head>
+
+
+<body>
+    <div class="overlay">
+        <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>
+    </div>
+    <h2> ReviewQA </h2>
+    <div class="row">
+        <div class="col-sm-1"></div>
+
+        <div class="col-sm-10">
+            <h4> Inputs </h4>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="input_idx">Question Index</label>
+                    <input type="text" class="form-control" id="input_idx"></textarea>
+                </div>
+                <div class="form-group col-md-3">
+                    <label></label>
+                    <button type="button" class="btn btn-primary btn-lg btn-block" id="btn-process">Get
+                        answer</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="question">Question</label>
+                    <input type="text" class="form-control" id="question" readonly></input>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-12">
+                    <label for="text_paragraphs">Review Snippets</label>
+                    <textarea class="form-control txt_input" id="text_paragraphs" readonly> </textarea>
+                </div>
+            </div>
+            <h4> Answers </h4>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="text_paragraphs">First</label>
+                    <textarea class="form-control txt_response" id="first" readonly> </textarea>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="text_paragraphs">Random</label>
+                    <textarea class="form-control txt_response" id="random" readonly> </textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="text_paragraphs">BERT</label>
+                    <textarea class="form-control txt_response" id="bert" readonly> </textarea>
+                </div>
+                <div class="form-group col-md-6">
+                    <label for="text_paragraphs">BART</label>
+                    <textarea class="form-control txt_response" id="bart" readonly> </textarea>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-sm-1"></div>
+    </div>
+</body>
+
+</html>
