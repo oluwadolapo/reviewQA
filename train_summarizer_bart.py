@@ -97,6 +97,7 @@ def main():
     wandb.init(config=args, project=args.project_name)
 
     _set_random_seeds(args.random_seed)
+    
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print('There are %d GPU(s) available.' % torch.cuda.device_count())
