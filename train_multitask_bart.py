@@ -8,7 +8,7 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 
 from multi_task_bart import config
 from utils import format_time
-from summarizer.bart.model import model_choice
+from multi_task_bart.model import model_choice
 from multi_task_bart.train_eval import multi_task_train, multi_task_eval
 from multi_task_bart.data import summarizer_data, classifier_data
 
