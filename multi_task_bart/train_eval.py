@@ -70,7 +70,8 @@ def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
 
                 act_fcn = nn.Sigmoid()
                 criterion = nn.BCELoss()
-                loss2 = criterion(act_fcn(pred), batch2[4].float())
+                labels = batch2[4].to(device)
+                loss2 = criterion(act_fcn(pred), labels.float())
 
                 total_train_loss2 += loss2.mean().detach().cpu()
 
