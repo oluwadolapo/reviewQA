@@ -61,9 +61,9 @@ def summarizer_data(args, tokenizer, task):
         if args.data_size == 50000:
             df = df.head(49000)
             split = 45001
-        elif args.data_size == 100000:
-            df = df.head(99000)
-            split = 95001
+        elif args.data_size == 25000:
+            df = df.head(24000)
+            split = 20001
 
     quest_rev, answers = prepare_data(df, task)
 
@@ -113,9 +113,9 @@ def classifier_data(args, tokenizer, task):
         if args.data_size == 50000:
             df = df.head(49000)
             split = 45001
-        elif args.data_size == 100000:
-            df = df.head(99000)
-            split = 95001
+        elif args.data_size == 25000:
+            df = df.head(24000)
+            split = 20001
 
     quest_rev = prepare_data(df, task)
 

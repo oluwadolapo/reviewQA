@@ -29,8 +29,6 @@ grpcio==1.31.0
 h5py==2.10.0
 hupper==1.10.2
 idna==2.10
-ipython==7.18.1
-ipython-genutils==0.2.0
 jedi==0.17.2
 joblib==0.16.0
 Keras==2.4.3
@@ -101,11 +99,8 @@ termcolor==1.1.0
 thinc==7.4.1
 threadpoolctl==2.1.0
 tokenizers==0.8.1rc2
-torch==1.6.0+cpu
 torchtext==0.7.0
-torchvision==0.7.0+cpu
 tqdm==4.48.2
-traitlets==5.0.3
 transaction==3.0.0
 transformers==3.1.0
 translationstring==1.4

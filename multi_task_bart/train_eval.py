@@ -5,11 +5,11 @@ import torch.nn as nn
 
 from utils import format_time
 
-def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader, 
+def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
                         device, optimizer, scheduler):
     print("")
     print('Training...')
-    
+
     criterion = nn.BCEWithLogitsLoss()
 
     t0 = time.time()
@@ -33,15 +33,16 @@ def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
             model.zero_grad()
             if i == 0:
                 # Do summarizer
-                _, loss1 = model(input_ids = batch1[0].to(device),
+                loss1 = model(input_ids = batch1[0].to(device),
                              attention_mask = batch1[1].to(device),
                              decoder_input_ids = batch1[2].to(device),
                              decoder_attention_mask = batch1[3].to(device),
-                             is_training = True)
+                             is_training = True,
+                             summarization=True)
                 #print('training', loss)
 
                 #import IPython; IPython.embed(); exit(1)
-  
+
                 total_train_loss1 += loss1.mean().detach().cpu()
 
                 # Perform a backward pass to calculate the gradients.
@@ -58,12 +59,13 @@ def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
 
             else:
                 # Do classification
-                pred, _ = model(input_ids = batch2[0].to(device),
-                             attention_mask = batch2[1].to(device),
-                             decoder_input_ids = batch2[2].to(device),
-                             decoder_attention_mask = batch2[3].to(device),
-                             is_training = True)
-                
+                loss2 = model(input_ids = batch2[0].to(device),
+                            attention_mask = batch2[1].to(device),
+                            decoder_input_ids = batch2[2].to(device),
+                            decoder_attention_mask = batch2[3].to(device),
+                            labels = batch2[4].to(device),
+                            is_training = True)
+                """
                 pred = pred.squeeze()
                 pred = pred.unsqueeze(dim=0)
                 #import IPython; IPython.embed(); exit(1)
@@ -72,7 +74,7 @@ def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
                 criterion = nn.BCELoss()
                 labels = batch2[4].to(device)
                 loss2 = criterion(act_fcn(pred), labels.float())
-
+                """
                 total_train_loss2 += loss2.mean().detach().cpu()
 
                 # Perform a backward pass to calculate the gradients.
@@ -88,7 +90,7 @@ def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
                 scheduler.step()
 
             step += 1
-    
+
     avg_train_loss1 = total_train_loss1 / len(summarizer_dataloader)
     avg_train_loss2 = total_train_loss2 / len(classifier_dataloader)
 
@@ -116,15 +118,15 @@ def multi_task_eval(model, summarizer_dataloader, classifier_dataloader, device)
         for i in range(2):
             model.zero_grad()
             if i == 0:
-                # Do summarizer  
+                # Do summarizer
                 with torch.no_grad():
                     _, val_loss1 = model(input_ids = batch1[0].to(device),
                                         attention_mask = batch1[1].to(device),
                                         decoder_input_ids = batch1[2].to(device),
                                         decoder_attention_mask = batch1[3].to(device),
                                         is_training = True)
- 
-            
+
+
                     # Accumulate the validation loss.
                     #print('val_loss', val_loss)
                     total_eval_loss1 += val_loss1.mean().detach().cpu()

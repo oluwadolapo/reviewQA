@@ -4,12 +4,13 @@ import torch.nn.functional as F
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
 
 class MyBart(BartForConditionalGeneration):
-    def classifier_head(self, voc_size):
+    def classifier_head(self, voc_size, device):
         self.fc_head = nn.Linear(voc_size, 1)
+        self.fc_head.to(device)
 
     def forward(self, input_ids, attention_mask=None, encoder_outputs=None,
             decoder_input_ids=None, decoder_attention_mask=None, decoder_cached_states=None,
-            use_cache=False, is_training=False):
+            use_cache=False, is_training=False, summarization=False, labels=None, device=None):
 
         if is_training:
             decoder_start_token_id = self.config.decoder_start_token_id
@@ -18,28 +19,45 @@ class MyBart(BartForConditionalGeneration):
             _decoder_input_ids[..., 0] = decoder_start_token_id
         else:
             _decoder_input_ids = decoder_input_ids.clone()
-
-        outputs = self.model(
-            input_ids,
-            attention_mask=attention_mask,
-            encoder_outputs=encoder_outputs,
-            decoder_input_ids=_decoder_input_ids,
-            decoder_attention_mask=decoder_attention_mask,
-            decoder_cached_states=decoder_cached_states,
-            use_cache=use_cache,
-        )
-        lm_logits = F.linear(outputs[0], self.model.shared.weight, bias=self.final_logits_bias)
-        voc_size = lm_logits.size()[2]
-        self.classifier_head(voc_size)
-        logits = lm_logits[:,-1,:]
-        classifier_output = self.fc_head(logits)
-        if is_training:
-            loss_fct = nn.CrossEntropyLoss(reduce=False)
-            losses = loss_fct(lm_logits.view(-1, self.config.vocab_size),
-                              decoder_input_ids.view(-1))
-            loss = torch.sum(losses * decoder_attention_mask.float().view(-1))
-            return classifier_output, loss
-        return (lm_logits, ) + outputs[1:]
+        if summarization:
+            outputs = self.model(
+                input_ids,
+                attention_mask=attention_mask,
+                encoder_outputs=encoder_outputs,
+                decoder_input_ids=_decoder_input_ids,
+                decoder_attention_mask=decoder_attention_mask,
+                decoder_cached_states=decoder_cached_states,
+                use_cache=use_cache
+            )
+            lm_logits = F.linear(outputs[0], self.model.shared.weight, bias=self.final_logits_bias)
+            if is_training:
+                loss_fct = nn.CrossEntropyLoss(reduce=False)
+                losses = loss_fct(lm_logits.view(-1, self.config.vocab_size),
+                                  decoder_input_ids.view(-1))
+                loss = torch.sum(losses * decoder_attention_mask.float().view(-1))
+                return loss
+            return (lm_logits, ) + outputs[1:]
+        else:
+            outputs = self.model(
+                input_ids,
+                attention_mask=attention_mask,
+                encoder_outputs=encoder_outputs,
+                decoder_input_ids=_decoder_input_ids,
+                decoder_attention_mask=decoder_attention_mask,
+                decoder_cached_states=decoder_cached_states,
+                use_cache=use_cache,
+                return_dict=True
+            )
+            class_head_size = outputs['last_hidden_state'].size()[2]
+            self.classifier_head(class_head_size, device)
+            logits = outputs['last_hidden_state'][:,-1,:]
+            classifier_output = self.fc_head(logits)
+            classifier_output = classifier_output.squeeze()
+            classifier_output = classifier_output.unsqueeze(dim=0)
+            act_fcn = nn.Sigmoid()
+            criterion = nn.BCELoss()
+            loss = criterion(act_fcn(classifier_output), labels.float())
+            return loss
 
 
 def model_choice(bart_type, from_scratch, model_path):
