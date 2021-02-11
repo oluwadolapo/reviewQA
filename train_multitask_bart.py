@@ -8,7 +8,7 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 
 from multi_task_bart import config
 from utils import format_time
-from multi_task_bart.model import model_choice
+from multi_task_bart.model import model_choice, classifier_h
 from multi_task_bart.train_eval import multi_task_train, multi_task_eval
 from multi_task_bart.data import summarizer_data, classifier_data
 
@@ -37,7 +37,7 @@ def optim(args, model, train_dataloader):
     return optimizer, scheduler
 
 
-def training(args, model, summarizer_train_dataloader, summarizer_val_dataloader,
+def training(args, model, class_h, summarizer_train_dataloader, summarizer_val_dataloader,
                 classifier_train_dataloader, classifier_val_dataloader, tokenizer, device):
     training_stats = []
     total_t0 = time.time()
@@ -51,9 +51,9 @@ def training(args, model, summarizer_train_dataloader, summarizer_val_dataloader
         print('======== Epoch {:} / {:} ========'.format(epoch, args.num_train_epochs))
 
         
-        avg_train_loss1, avg_train_loss2, training_time = multi_task_train(args, model, summarizer_train_dataloader, 
+        avg_train_loss1, avg_train_loss2, training_time = multi_task_train(args, model, class_h, summarizer_train_dataloader, 
                                           classifier_train_dataloader, device, optimizer, scheduler)
-        avg_val_loss1, avg_val_loss2, validation_time = multi_task_eval(model, summarizer_val_dataloader,
+        avg_val_loss1, avg_val_loss2, validation_time = multi_task_eval(model, class_h, summarizer_val_dataloader,
                                                          classifier_val_dataloader, device)
         
         wandb.log({"avg_train_loss1": avg_train_loss1, "avg_train_loss2": avg_train_loss2, "avg_val_loss1": avg_val_loss1, "avg_val_loss2": avg_val_loss2}, step=epoch)
@@ -81,13 +81,13 @@ def training(args, model, summarizer_train_dataloader, summarizer_val_dataloader
     
         if min_val_loss1 == None or avg_val_loss1 < min_val_loss1:
             if min_val_loss2 == None or avg_val_loss2 < min_val_loss2:
-                print("Saving model to %s" % args.output_dir)
+                print("Saving model to %s" % args.save_model_path)
                 # Save a trained model, configuration and tokenizer using `save_pretrained()`.
                 # They can then be reloaded using `from_pretrained()`
                 model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
-                model_to_save.save_pretrained(args.output_dir)
-                tokenizer.save_pretrained(args.output_dir)
- 
+                model_to_save.save_pretrained(args.save_model_path)
+                tokenizer.save_pretrained(args.save_model_path)
+                torch.save(class_h.state_dict(), args.save_classifier_path)
                 # Copy the model files to a directory in your Google Drive.
                 #!cp -r ./model_save4/ "/content/drive/My Drive/Experiments/Bart_QA"
  
@@ -117,16 +117,22 @@ def main():
         print("No GPU available, using CPU instead.")
         device = torch.device("cpu")
 
-    model_path = args.model_path
-    model, tokenizer = model_choice(args.bart_type, args.from_scratch, args.model_path)
+    model_path = args.load_model_path
+    model, tokenizer = model_choice(args.bart_type, args.from_scratch, args.load_model_path)
     model.to(device)
 
+    class_h = classifier_h()
+    if not args.from_scratch:
+        class_h.load_state_dict(torch.load(args.load_classifier_path, map_location=device))
+    class_h.to(device)
+
     wandb.watch(model)
+    wandb.watch(class_h)
 
     summarizer_train_dataloader, summarizer_val_dataloader = summarizer_data(args, tokenizer, 'summarization')
     classifier_train_dataloader, classifier_val_dataloader = classifier_data(args, tokenizer, 'classification')
 
-    training(args, model, summarizer_train_dataloader, summarizer_val_dataloader,
+    training(args, model, class_h, summarizer_train_dataloader, summarizer_val_dataloader,
                 classifier_train_dataloader, classifier_val_dataloader, tokenizer, device)
 
 

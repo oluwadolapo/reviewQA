@@ -3,6 +3,23 @@ from torch import Tensor, nn
 import torch.nn.functional as F
 from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
 
+class classifier_h(nn.Module):
+    def __init__(self):
+        super(classifier_h, self).__init__()
+        self.fc_head = nn.Linear(1024, 1)
+    
+    def forward(self, logits, labels):
+        classifier_output = self.fc_head(logits)
+        classifier_output = classifier_output.squeeze()
+        classifier_output = classifier_output.unsqueeze(dim=0)
+        #import IPython; IPython.embed(); exit(1)
+        act_fcn = nn.Sigmoid()
+        criterion = nn.BCELoss()
+        #import IPython; IPython.embed(); exit(1)
+        pred = act_fcn(classifier_output[0])
+        loss = criterion(pred, labels.float())
+        return pred, loss
+
 class MyBart(BartForConditionalGeneration):
     def classifier_head(self, voc_size, device):
         self.fc_head = nn.Linear(voc_size, 1)
@@ -48,16 +65,8 @@ class MyBart(BartForConditionalGeneration):
                 use_cache=use_cache,
                 return_dict=True
             )
-            class_head_size = outputs['last_hidden_state'].size()[2]
-            self.classifier_head(class_head_size, device)
             logits = outputs['last_hidden_state'][:,-1,:]
-            classifier_output = self.fc_head(logits)
-            classifier_output = classifier_output.squeeze()
-            classifier_output = classifier_output.unsqueeze(dim=0)
-            act_fcn = nn.Sigmoid()
-            criterion = nn.BCELoss()
-            loss = criterion(act_fcn(classifier_output), labels.float())
-            return loss
+            return logits
 
 
 def model_choice(bart_type, from_scratch, model_path):

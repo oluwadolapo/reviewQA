@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from utils import format_time
 
-def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
+def multi_task_train(args, model, class_h, summarizer_dataloader, classifier_dataloader,
                         device, optimizer, scheduler):
     print("")
     print('Training...')
@@ -59,12 +59,13 @@ def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
 
             else:
                 # Do classification
-                loss2 = model(input_ids = batch2[0].to(device),
+                logits = model(input_ids = batch2[0].to(device),
                             attention_mask = batch2[1].to(device),
                             decoder_input_ids = batch2[2].to(device),
                             decoder_attention_mask = batch2[3].to(device),
                             labels = batch2[4].to(device),
                             is_training = True)
+                _, loss2 = class_h(logits, batch2[4].to(device))
                 """
                 pred = pred.squeeze()
                 pred = pred.unsqueeze(dim=0)
@@ -100,7 +101,7 @@ def multi_task_train(args, model, summarizer_dataloader, classifier_dataloader,
     return avg_train_loss1, avg_train_loss2, training_time
 
 
-def multi_task_eval(model, summarizer_dataloader, classifier_dataloader, device):
+def multi_task_eval(model, class_h, summarizer_dataloader, classifier_dataloader, device):
     print("")
     print("Running Validation...")
 
@@ -120,7 +121,7 @@ def multi_task_eval(model, summarizer_dataloader, classifier_dataloader, device)
             if i == 0:
                 # Do summarizer
                 with torch.no_grad():
-                    _, val_loss1 = model(input_ids = batch1[0].to(device),
+                    val_loss1 = model(input_ids = batch1[0].to(device),
                                         attention_mask = batch1[1].to(device),
                                         decoder_input_ids = batch1[2].to(device),
                                         decoder_attention_mask = batch1[3].to(device),
@@ -134,17 +135,19 @@ def multi_task_eval(model, summarizer_dataloader, classifier_dataloader, device)
             else:
                 # Do classifier
                 with torch.no_grad():
-                    pred, _ = model(input_ids = batch2[0].to(device),
+                    logits = model(input_ids = batch2[0].to(device),
                                         attention_mask = batch2[1].to(device),
                                         decoder_input_ids = batch2[2].to(device),
                                         decoder_attention_mask = batch2[3].to(device),
+                                        labels = batch2[4].to(device),
                                         is_training = True)
 
-                    pred = pred.squeeze()
-                    pred = pred.unsqueeze(dim=0)
-                    act_fcn = nn.Sigmoid()
-                    criterion = nn.BCELoss()
-                    val_loss2 = criterion(act_fcn(pred), batch2[4].float())
+                    _, val_loss2 = class_h(logits, batch2[4].to(device))
+                    #pred = pred.squeeze()
+                    #pred = pred.unsqueeze(dim=0)
+                    #act_fcn = nn.Sigmoid()
+                    #criterion = nn.BCELoss()
+                    #val_loss2 = criterion(act_fcn(pred), batch2[4].float())
 
                     # Accumulate the validation loss.
                     #print('val_loss', val_loss)

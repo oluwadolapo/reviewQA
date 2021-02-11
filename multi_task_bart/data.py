@@ -7,12 +7,14 @@ def tokenize_batch(quest_rev, answers, tokenizer, max_len):
     encoder_input = tokenizer.batch_encode_plus(
     quest_rev,
     pad_to_max_length = True,
-    max_length = max_len)
+    max_length = max_len,
+    truncation = True)
 
     decoder_input = tokenizer.batch_encode_plus(
     answers,
-    pad_to_max_length = True)
-
+    pad_to_max_length = True,
+    max_length = max_len,
+    truncation = True)
     return encoder_input, decoder_input
 
 def prepare_data(df, task):
@@ -46,7 +48,6 @@ def prepare_data(df, task):
                 q = q + " " + r
             q += " </s>"
             quest_rev.append(q)
-
         return quest_rev
 
 
@@ -160,3 +161,39 @@ def classifier_data(args, tokenizer, task):
     validation_dataloader = DataLoader(validation_data, sampler=validation_sampler, batch_size=batch_size)
 
     return train_dataloader, validation_dataloader
+
+
+def classifier_testing_data(args, tokenizer):
+    df = pd.read_json(args.classifier_data_path, orient='split')
+    #df = df.head(49500)
+
+    if args.local_test:
+        df = df.head(50)
+
+    quest_rev = prepare_data(df, 'classification')
+
+    # Get the labels from the DataFrame, and convert from booleans to ints.
+    labels = df.is_answerable.to_numpy().astype(float)
+
+    encoder_input, decoder_input = tokenize_batch(quest_rev, quest_rev, tokenizer, args.max_len)
+    test_inputs, test_input_mask = encoder_input["input_ids"], encoder_input["attention_mask"]
+    test_targets, test_target_mask = decoder_input["input_ids"], decoder_input["attention_mask"]
+    test_label = labels
+
+
+    # Convert all inputs and targets into torch tensors, the required datatype
+    # for our model.
+    test_inputs = torch.tensor(test_inputs)
+    test_targets = torch.tensor(test_targets)
+    test_input_mask = torch.tensor(test_input_mask)
+    test_target_mask = torch.tensor(test_target_mask)
+    test_label = torch.tensor(test_label)
+
+    batch_size = args.train_batch_size
+
+    # Create the DataLoader for our testing set
+    test_data = TensorDataset(test_inputs, test_input_mask, test_targets, test_target_mask, test_label)
+    test_sampler = SequentialSampler(test_data)
+    test_dataloader = DataLoader(test_data, sampler=test_sampler, batch_size=batch_size)
+
+    return test_dataloader
