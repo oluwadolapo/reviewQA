@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from transformers import AdamW, get_linear_schedule_with_warmup
 
-from classifier.bart.model import model_choice
+from classifier.bart.model import model_choice, classifier_h
 from classifier.bart import config
 from utils import format_time
 from classifier.bart.train_eval import train, eval
@@ -36,7 +36,7 @@ def optim(args, model, train_dataloader):
                                 num_training_steps=total_steps)
     return optimizer, scheduler
 
-def training(args, model, train_dataloader, val_dataloader, tokenizer, device):
+def training(args, model, class_h, train_dataloader, val_dataloader, tokenizer, device):
     training_stats = []
     total_t0 = time.time()
     min_val_loss = None
@@ -47,9 +47,9 @@ def training(args, model, train_dataloader, val_dataloader, tokenizer, device):
         print("")
         print('======== Epoch {:} / {:} ========'.format(epoch, args.num_train_epochs))
  
-        avg_train_loss, training_time = train(args, model, train_dataloader, 
+        avg_train_loss, training_time = train(args, model, class_h, train_dataloader, 
                                                                 device, optimizer, scheduler)
-        avg_val_loss, validation_time = eval(model, val_dataloader, device)
+        avg_val_loss, validation_time = eval(model, class_h, val_dataloader, device)
         
         wandb.log({"avg_train_loss": avg_train_loss, "avg_val_loss": avg_val_loss}, step=epoch)
  
@@ -69,12 +69,13 @@ def training(args, model, train_dataloader, val_dataloader, tokenizer, device):
             })
     
         if min_val_loss == None or avg_val_loss < min_val_loss:
-            print("Saving model to %s" % args.output_dir)
+            print("Saving model to %s" % args.save_model_path)
             # Save a trained model, configuration and tokenizer using `save_pretrained()`.
             # They can then be reloaded using `from_pretrained()`
             model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
-            model_to_save.save_pretrained(args.output_dir)
-            tokenizer.save_pretrained(args.output_dir)
+            model_to_save.save_pretrained(args.save_model_path)
+            tokenizer.save_pretrained(args.save_model_path)
+            torch.save(model.state_dict(), args, save_classifier_path)
  
             # Copy the model files to a directory in your Google Drive.
             #!cp -r ./model_save4/ "/content/drive/My Drive/Experiments/Bart_QA"
@@ -104,14 +105,19 @@ def main():
         print("No GPU available, using CPU instead.")
         device = torch.device("cpu")
 
-    model_path = args.model_path
-    model, tokenizer = model_choice(args.bart_type, args.from_scratch, args.model_path)
+    model_path = args.load_model_path
+    model, tokenizer = model_choice(args.bart_type, args.from_scratch, args.load_model_path)
     model.to(device)
+    class_h = classifier_h()
+    if not args.from_scratch:
+        class_h.load_state_dict(torch.load(args.load_classifier_path, map_location=device))
+    class_h.to(device)
 
     wandb.watch(model)
+    wandb.watch(class_h)
 
     train_dataloader, val_dataloader = training_data(args, tokenizer)
-    training(args, model, train_dataloader, val_dataloader, tokenizer, device)
+    training(args, model, class_h, train_dataloader, val_dataloader, tokenizer, device)
     print()
     print("End of Training")
 

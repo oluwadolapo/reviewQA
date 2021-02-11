@@ -3,10 +3,29 @@ from torch import Tensor, nn
 import torch.nn.functional as F
 from transformers import BartTokenizer, BartForSequenceClassification, BartConfig
 
+class classifier_h(nn.Module):
+    def __init__(self):
+        super(classifier_h, self).__init__()
+        self.fc_head = nn.Linear(1024, 1)
+    
+    def forward(self, logits, labels):
+        classifier_output = self.fc_head(logits)
+        classifier_output = classifier_output.squeeze()
+        classifier_output = classifier_output.unsqueeze(dim=0)
+        #import IPython; IPython.embed(); exit(1)
+        act_fcn = nn.Sigmoid()
+        criterion = nn.BCELoss()
+        #import IPython; IPython.embed(); exit(1)
+        pred = act_fcn(classifier_output[0])
+        loss = criterion(pred, labels.float())
+        return pred, loss
+
 class MyBart(BartForSequenceClassification):
+    """
     def classifier_head(self, input_size, device):
         self.fc_head = nn.Linear(input_size, 1)
         self.fc_head.to(device)
+    """
 
     def forward(self, input_ids, labels, attention_mask=None, encoder_outputs=None,
             decoder_input_ids=None, decoder_attention_mask=None, decoder_cached_states=None,
@@ -31,17 +50,23 @@ class MyBart(BartForSequenceClassification):
             use_cache=use_cache,
             return_dict=True
         )
+
+        logits = outputs['last_hidden_state'][:,-1,:]
+        """
+        #import IPython; IPython.embed(); exit(1)
         class_head_size = outputs['last_hidden_state'].size()[2]
         self.classifier_head(class_head_size, device)
-        logits = outputs['last_hidden_state'][:,-1,:]
         classifier_output = self.fc_head(logits)
         classifier_output = classifier_output.squeeze()
         classifier_output = classifier_output.unsqueeze(dim=0)
+        #import IPython; IPython.embed(); exit(1)
         act_fcn = nn.Sigmoid()
         criterion = nn.BCELoss()
         #import IPython; IPython.embed(); exit(1)
         loss = criterion(act_fcn(classifier_output[0]), labels.float())
         return act_fcn(classifier_output[0]), loss
+        """
+        return logits
 
 
 def model_choice(bart_type, from_scratch, model_path):
@@ -51,5 +76,4 @@ def model_choice(bart_type, from_scratch, model_path):
     else:
         model = MyBart.from_pretrained(model_path)
         tokenizer = BartTokenizer.from_pretrained(model_path)
-    
     return model, tokenizer

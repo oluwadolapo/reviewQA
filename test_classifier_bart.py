@@ -3,12 +3,12 @@ import numpy as np
 import torch
 from transformers import BartTokenizer, BartForSequenceClassification, BartConfig
 
-from classifier.bart.model import model_choice
+from classifier.bart.model import model_choice, classifier_h
 from utils import flat_accuracy, joint_metrics, confusion
 from classifier.bart import config
 from classifier.bart.data import testing_data
 
-def eval(model, test_dataloader, device):
+def eval(model, class_h, test_dataloader, device):
     print("")
     print("Running Evaluation...")
     
@@ -26,20 +26,22 @@ def eval(model, test_dataloader, device):
     for batch in test_dataloader:
 
         with torch.no_grad():
-            logits, loss = model(input_ids = batch[0].to(device),
+            logits = model(input_ids = batch[0].to(device),
                             attention_mask = batch[1].to(device),
                             decoder_input_ids = batch[2].to(device),
                             decoder_attention_mask = batch[3].to(device),
                             labels = batch[4].to(device),
                             device = device)
-        
+
+            pred, _ = class_h(logits, batch[4].to(device))
+
         b_labels = batch[4].to(device)
         # Move logits and labels to CPU
-        logits = logits.detach().cpu().numpy()
+        pred = pred.detach().cpu().numpy()
         label_ids = b_labels.to('cpu').numpy()
 
         #pred_flat = np.argmax(logits, axis=1).flatten()
-        pred_flat = logits.flatten()
+        pred_flat = pred.flatten()
         pred_flat = np.round_(pred_flat)
         labels_flat = label_ids.flatten()
 
@@ -104,15 +106,20 @@ def main():
     #            args.model_path)
     #tokenizer = BartTokenizer.from_pretrained(args.model_path)
     #model.to(device)
-    model_path = args.model_path
-    model, tokenizer = model_choice(args.bart_type, args.from_scratch, args.model_path)
+    model_path = args.load_model_path
+    model, tokenizer = model_choice(args.bart_type, args.from_scratch, args.load_model_path)
     model.to(device)
+    class_h = classifier_h()
+    class_h.load_state_dict(torch.load(args.load_classifier_path, map_location=device))
+    class_h.to(device)
+
     wandb.watch(model)
+    wandb.watch(class_h)
 
     test_dataloader = testing_data(args, tokenizer)
 
     model.eval()
-    eval(model, test_dataloader, device)
+    eval(model, class_h, test_dataloader, device)
 
 
 if __name__ == "__main__":

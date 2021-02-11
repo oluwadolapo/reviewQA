@@ -8,10 +8,14 @@ def get_params():
                         help='Random Seed')
     parser.add_argument('--bart_type', dest='bart_type', type=str, default='facebook/bart-large',
                         help='The pre-trained bart model to be used')
-    parser.add_argument('--model_path', dest='model_path', type=str, default=None,
+    parser.add_argument('--load_model_path', dest='load_model_path', type=str, default=None,
                         help='Model Path if not training from scratch')
-    parser.add_argument('--output_dir', dest='output_dir', type=str, default=None,
-                        help='Directory for saving model')
+    parser.add_argument('--load_classifier_path', dest='load_classifier_path', type=str, default=None,
+                        help='Path for loading classifier')
+    parser.add_argument('--save_model_path', dest='save_model_path', type=str, default=None,
+                        help='Path for saving model')
+    parser.add_argument('--save_classifier_path', dest='save_classifier_path', type=str, default=None,
+                        help='Path for saving classifier')
     parser.add_argument('--data_path', dest='data_path', type=str, default=None,
                         help='Dataset Path')
     parser.add_argument('--data_size', dest='data_size', type=int, default=50000,

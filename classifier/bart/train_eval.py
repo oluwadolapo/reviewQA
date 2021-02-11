@@ -4,7 +4,7 @@ import torch
 
 from utils import format_time
 
-def train(args, model, train_dataloader, device, optimizer, scheduler):
+def train(args, model, class_h, train_dataloader, device, optimizer, scheduler):
     print("")
     print('Training...')
     
@@ -24,13 +24,14 @@ def train(args, model, train_dataloader, device, optimizer, scheduler):
             print(' Batch {:>5,} of {:>5,}.   Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
 
         model.zero_grad()
-        _, loss = model(input_ids = batch[0].to(device),
+        logits = model(input_ids = batch[0].to(device),
                             labels = batch[4].to(device),
                             attention_mask = batch[1].to(device),
                             decoder_input_ids = batch[2].to(device),
                             decoder_attention_mask = batch[3].to(device),
-                            is_training = True)
-
+                            is_training = True,
+                            device = device)
+        _, loss = class_h(logits, batch[4].to(device))
         total_train_loss += loss.mean().detach().cpu()
 
         # Perform a backward pass to calculate the gradients.
@@ -53,7 +54,7 @@ def train(args, model, train_dataloader, device, optimizer, scheduler):
     return avg_train_loss, training_time
 
 
-def eval(model, eval_dataloader, device):
+def eval(model, class_h, eval_dataloader, device):
     print("")
     print("Running Validation...")
 
@@ -69,14 +70,15 @@ def eval(model, eval_dataloader, device):
     for batch in eval_dataloader:
 
         with torch.no_grad():
-            _, val_loss = model(input_ids = batch[0].to(device),
+            logits = model(input_ids = batch[0].to(device),
                              attention_mask = batch[1].to(device),
                              decoder_input_ids = batch[2].to(device),
                              decoder_attention_mask = batch[3].to(device),
                              labels = batch[4].to(device),
-                             is_training = True)
+                             is_training = True,
+                             device = device)
  
-            
+            _, val_loss = class_h(logits, batch[4].to(device))
         # Accumulate the validation loss.
         #print('val_loss', val_loss)
         total_eval_loss += val_loss.mean().detach().cpu()

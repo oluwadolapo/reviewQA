@@ -7,11 +7,14 @@ def tokenize_batch(quest_rev, answers, tokenizer, max_len):
     encoder_input = tokenizer.batch_encode_plus(
     quest_rev,
     pad_to_max_length = True,
-    max_length = max_len)
+    max_length = max_len,
+    truncation = True)
 
     decoder_input = tokenizer.batch_encode_plus(
     answers,
-    pad_to_max_length = True)
+    pad_to_max_length = True,
+    max_length = max_len,
+    truncation = True)
 
     return encoder_input, decoder_input
 
