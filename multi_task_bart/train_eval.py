@@ -27,7 +27,7 @@ def multi_task_train(args, model, class_h, summarizer_dataloader, classifier_dat
             elapsed = format_time(time.time() - t0)
 
             # Report progress
-            print(' Batch {:>5,} of {:>5,}.   Elapsed: {:}.'.format(step, len(train_dataloader), elapsed))
+            print(' Batch {:>5,} of {:>5,}.   Elapsed: {:}.'.format(step, len(summarizer_dataloader), elapsed))
 
         for i in range(2):
             model.zero_grad()
