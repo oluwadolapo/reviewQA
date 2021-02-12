@@ -46,9 +46,9 @@ def training_data(args, tokenizer):
         if args.data_size == 50000:
             df = df.head(49000)
             split = 45001
-        elif args.data_size == 25000:
-            df = df.head(24000)
-            split = 20001
+        elif args.data_size == 30000:
+            df = df.head(30000)
+            split = 25001
 
     quest_rev = prepare_data(df)
 
