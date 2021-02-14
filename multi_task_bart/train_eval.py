@@ -125,7 +125,8 @@ def multi_task_eval(model, class_h, summarizer_dataloader, classifier_dataloader
                                         attention_mask = batch1[1].to(device),
                                         decoder_input_ids = batch1[2].to(device),
                                         decoder_attention_mask = batch1[3].to(device),
-                                        is_training = True)
+                                        is_training = True,
+                                        summarization=True)
 
 
                     # Accumulate the validation loss.

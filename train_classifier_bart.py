@@ -75,7 +75,7 @@ def training(args, model, class_h, train_dataloader, val_dataloader, tokenizer, 
             model_to_save = model.module if hasattr(model, 'module') else model  # Take care of distributed/parallel training
             model_to_save.save_pretrained(args.save_model_path)
             tokenizer.save_pretrained(args.save_model_path)
-            torch.save(model.state_dict(), args.save_classifier_path)
+            torch.save(class_h.state_dict(), args.save_classifier_path)
  
             # Copy the model files to a directory in your Google Drive.
             #!cp -r ./model_save4/ "/content/drive/My Drive/Experiments/Bart_QA"
