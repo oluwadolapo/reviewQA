@@ -6,10 +6,13 @@ from transformers import BartTokenizer, BartForConditionalGeneration, BartConfig
 class classifier_h(nn.Module):
     def __init__(self):
         super(classifier_h, self).__init__()
+        self.fc_hidden = nn.Linear(1024, 1024)
         self.fc_head = nn.Linear(1024, 1)
     
     def forward(self, logits, labels):
-        classifier_output = self.fc_head(logits)
+        hidden_vec = self.fc_hidden(logits)
+        hidden_vec = self.fc_hidden(hidden_vec)
+        classifier_output = self.fc_head(hidden_vec)
         classifier_output = classifier_output.squeeze()
         classifier_output = classifier_output.unsqueeze(dim=0)
         #import IPython; IPython.embed(); exit(1)
